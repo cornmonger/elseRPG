@@ -1,152 +1,110 @@
 #![allow(dead_code)]
 
-use std::{collections::HashMap};
-use std::fmt;
-
 pub struct Area<'a> {
     id: u64,
     name: &'a str
 }
 
-pub struct Entity<'a> {
+pub trait ComponentModel {
+
+}
+pub enum HumanoidComponents {
+    Head,
+    Back 
+}
+
+pub struct HumanoidModel<'e> {
+    head: Option<Entity<'e, Componentless>>,
+    back: Option<Entity<'e, Componentless>>
+}
+
+pub struct Componentless {
+
+}
+
+impl ComponentModel for Componentless {
+}
+
+impl<'e> ComponentModel for HumanoidModel<'e> {
+}
+
+impl<'e> HumanoidModel<'e> {
+    fn get(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
+        match component {
+            HumanoidComponents::Head => Some(Box::new(self.head.as_ref().unwrap())),
+            HumanoidComponents::Back => Some(Box::new(self.back.as_ref().unwrap()))
+        }
+    }
+}
+
+pub trait EntityTrait<'e> {
+    fn name(&self) -> &'e str;
+}
+
+
+pub struct Entity<'e, M: ComponentModel> {
     id: u64,
-    name: &'a str,
+    name: &'e str,
     max_health: u16,
     health: u16,
     max_armor: u16,
     armor: u16,
     max_ability: u16,
     ability: u16,
-    components: Option<HashMap<&'a str, Entity<'a>>>,
-    contains: Option<Vec<Entity<'a>>>
+    components: Option<M>,
+    contains: Option<Vec<Box<dyn EntityTrait<'e>>>>
 }
 
-pub struct Character<'a> {
-    entity: Entity<'a>,
+impl<'e, M: ComponentModel> EntityTrait<'e> for Entity<'e, M> {
+    fn name(&self) -> &'e str {
+        self.name
+    }
 }
 
-pub struct NPC<'a> {
-    character: Character<'a>
+pub struct Character<'e, M: ComponentModel> {
+    entity: Entity<'e, M>,
 }
 
-pub struct Player<'a> {
-    character: Character<'a>
+pub struct NPC<'e, M: ComponentModel> {
+    character: Character<'e, M>
 }
 
-pub struct Zone<'a> {
+pub struct Player<'e, M: ComponentModel> {
+    character: Character<'e, M>
+}
+
+pub struct Zone<'z> {
     id: u64,
-    name: &'a str,
+    name: &'z str,
     serial_id: u64,
 }
 
-pub enum HumanoidComponents {
-    Head,
-    Back 
-}
-
-impl fmt::Display for HumanoidComponents {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
+impl<'e> HumanoidModel<'e> {
+    pub fn new(zone: &mut Zone) -> HumanoidModel<'e> {
+        HumanoidModel::<'e> {
+            head: None,
+            back: Some(
+                    Entity::<'e, Componentless> {
+                        id: zone.next_id(),
+                        name: "Backpack",
+                        max_health: 100,
+                        health: 100,
+                        max_armor: 0,
+                        armor: 0,
+                        max_ability: 0,
+                        ability: 100,
+                        contains: None,
+                        components: None
+                    }
+            ) 
+        }
     }
-}
 
-impl<'a> fmt::Display for Entity<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-impl<'a> fmt::Display for Character<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-impl<'a> fmt::Display for Player<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-impl<'a> fmt::Display for NPC<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-impl<'a> fmt::Display for Area<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-impl<'a> fmt::Display for Zone<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}
-
-
-
-/*impl<'a> fmt::Display for Describable<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt.write_str(self.name())
-    }
-}*/
-
-
-pub trait Describable<'a> {
-    fn name (&self) -> &'a str;
-}
-
-impl<'a> Describable<'a> for HumanoidComponents {
-    fn name(&self) -> &'a str {
-        self.name()
-    }
-}
-
-impl<'a> Describable<'a> for Zone<'a> {
-    fn name(&self) -> &'a str {
-        self.name
-    }
-}
-
-impl<'a> Describable<'a> for Area<'a> {
-    fn name(&self) -> &'a str {
-        self.name
-    }
-}
-
-impl<'a> Describable<'a> for Entity<'a> {
-    fn name(&self) -> &'a str {
-        self.name
-    }
-}
-
-impl<'a> Describable<'a> for NPC<'a> {
-    fn name(&self) -> &'a str {
-        self.character.entity.name
-    }
-}
-
-impl<'a> Describable<'a> for Character<'a> {
-    fn name(&self) -> &'a str {
-        self.entity.name
-    }
-}
-
-impl<'a> Describable<'a> for Player<'a> {
-    fn name(&self) -> &'a str {
-        self.character.entity.name
-    }
-}
-
-impl<'a> Player<'a> {
-    pub fn new(zone: &mut Zone<'a>) -> Player<'a> {
+    pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidModel<'e>> {
         Player {
                 character: Character {
                     entity: Entity {
-                        id: 2,
+                        id: zone.next_id(),
                         name: "Player",
                         max_health: 100,
                         health: 100,
@@ -155,55 +113,40 @@ impl<'a> Player<'a> {
                         max_ability: 100,
                         ability: 100,
                         contains: None,
-                        components: Some({
-                            let mut map = HashMap::<&str, Entity>::new();
-                            map.insert(HumanoidComponents::Back.name(), Entity {
-                                id: zone.next_id(),
-                                name: "Klondike Backpack",
-                                max_health: 1,
-                                health: 1,
-                                max_armor: 0,
-                                armor: 0,
-                                max_ability: 0,
-                                ability: 0,
-                                components: None,
-                                contains: None
-                            });
-
-                            map
-                        })
+                        components: Some(HumanoidModel::new(zone))
                     }
                 }
             }
     }
 
-    pub fn attached<T: Describable<'a>> (&self, component: T) -> &Entity<'a> {
-        self.character.entity.components.as_ref().unwrap().get(component.name()).unwrap()
-    }
-
-    pub fn attached_as(&self, component_name: &'a str) -> &Entity<'a> {
-        self.character.entity.components.as_ref().unwrap().get(component_name).unwrap()
-    }
-}
-
-impl<'a> NPC<'a> {
-    pub fn new(zone: &mut Zone<'a>) -> NPC<'a> {
+    pub fn new_npc(zone: &mut Zone) -> NPC<'e, HumanoidModel<'e>> {
         NPC {
-            character: Character {
-                entity: Entity {
-                    id: zone.next_id(),
-                    name: "Troll",
-                    max_health: 50,
-                    health: 50,
-                    max_armor: 0,
-                    armor: 0,
-                    max_ability: 0,
-                    ability: 0,
-                    components: None,
-                    contains: None
+                character: Character {
+                    entity: Entity {
+                        id: zone.next_id(),
+                        name: "Troll",
+                        max_health: 40,
+                        health: 40,
+                        max_armor: 0,
+                        armor: 0,
+                        max_ability: 0,
+                        ability: 0,
+                        contains: None,
+                        components: Some(HumanoidModel::new(zone))
+                    }
                 }
             }
-        } 
+    }
+
+}
+
+pub trait Attachable<'e, M, E> {
+    fn attached(&self, component: E) -> Option<Box<&dyn EntityTrait<'e>>>;
+}
+
+impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
+    fn attached(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
+        self.character.entity.components.as_ref().unwrap().get(component)
     }
 }
 
@@ -216,9 +159,14 @@ impl HumanoidComponents {
     }
 }
 
-pub struct Component<'a> {
+pub struct Component {
     name: &'static str,
-    entity: Option<Entity<'a>>
+}
+
+impl<'e, M: ComponentModel> Player<'e, M> {
+    pub fn name(&self) -> &'e str {
+        self.character.entity.name
+    }
 }
 
 impl<'a> Zone<'a> {
@@ -234,6 +182,10 @@ impl<'a> Zone<'a> {
         self.serial_id += 1;
         self.serial_id
     }
+
+    pub fn name(&self) -> &'a str {
+        self.name
+    }
 }
 
 impl<'a> Area<'a> {
@@ -242,5 +194,15 @@ impl<'a> Area<'a> {
             id: zone.next_id(),
             name: "Lobby"
         }
+    }
+
+    pub fn name(&self) -> &'a str {
+        self.name
+    }
+}
+
+impl<'e, M: ComponentModel> NPC<'e, M> {
+    pub fn name(&self) -> &'e str {
+        self.character.entity.name
     }
 }

@@ -1,14 +1,15 @@
-use elserpg::{Zone, Area, NPC, Player, HumanoidComponents};
+use elserpg::{Zone, Area, HumanoidComponents, HumanoidModel, Attachable};
 
 fn main() {
     let mut zone = Zone::new();
     let lobby = Area::new(&mut zone);
-    let troll = NPC::new(&mut zone);
-    let player = Player::new(&mut zone);
+    let player = HumanoidModel::new_player(&mut zone);
+    let troll = HumanoidModel::new_npc(&mut zone);
 
-    println!("Welcome to {}, {}.", zone, player);
-    println!("You arrive in {}.", lobby);
-    println!("You see a {}.", troll);
+    println!("Welcome to {}, {}.", zone.name(), player.name());
+    println!("You arrive in {}.", lobby.name());
+    println!("You see a {}.", troll.name());
     println!("You are wearing a {} on your {}.",
-        player.attached(HumanoidComponents::Back), HumanoidComponents::Back);
+        player.attached(HumanoidComponents::Back).unwrap().name(),
+        HumanoidComponents::Back.name() );
 }
