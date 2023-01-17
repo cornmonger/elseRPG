@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 struct Area<'a> {
     id: u64,
     name: &'a str
@@ -12,15 +14,8 @@ struct Entity<'a> {
     armor: u16,
     max_ability: u16,
     ability: u16,
-    inventory: Option<Box<Container<'a>>>
-}
-
-struct Item<'a> {
-    entity: Entity<'a>
-}
-
-struct Container<'a> {
-    item: Item<'a>,
+    components: Option<HashMap<&'a str, Entity<'a>>>,
+    contains: Option<Vec<Entity<'a>>>
 }
 
 struct Character<'a> {
@@ -39,6 +34,21 @@ struct Zone<'a> {
     id: u64,
     name: &'a str,
     serial_id: u64,
+}
+
+struct Component<'a> {
+    id: u64,
+    name: &'a str
+}
+
+struct HumanoidComponents<'a> {
+    head: Component<'a>,
+    torso: Component<'a>,
+    shoulders: Component<'a>,
+    hands: Component<'a>,
+    waist: Component<'a>,
+    legs: Component<'a>,
+    feet: Component<'a>,
 }
 
 impl Zone<'_> {
@@ -71,7 +81,8 @@ fn main() {
                 armor: 0,
                 max_ability: 0,
                 ability: 0,
-                inventory: None
+                components: None,
+                contains: None
             }
         }
     };
@@ -87,23 +98,24 @@ fn main() {
                 armor: 0,
                 max_ability: 100,
                 ability: 100,
-                inventory: Some(Box::new(
-                    Container {
-                        item: Item {
-                            entity: Entity {
-                                id: zone.next_id(),
-                                name: "Backpack",
-                                max_health: 1,
-                                health: 1,
-                                max_armor: 0,
-                                armor: 0,
-                                max_ability: 0,
-                                ability: 0,
-                                inventory: None
-                            }
-                        }
-                    }
-                ))
+                contains: None,
+                components: Some({
+                    let mut map = HashMap::<&str, Entity>::new();
+                    map.insert("back", Entity {
+                        id: zone.next_id(),
+                        name: "Backpack",
+                        max_health: 1,
+                        health: 1,
+                        max_armor: 0,
+                        armor: 0,
+                        max_ability: 0,
+                        ability: 0,
+                        components: None,
+                        contains: None
+                    });
+
+                    map
+                })
             }
         }
     };
@@ -111,5 +123,5 @@ fn main() {
     println!("Welcome, {}.", player.character.entity.name);
     println!("You arrive in {}.", lobby.name);
     println!("You see a {}.", troll.character.entity.name);
-    println!("You are carrying a {}.", player.character.entity.inventory.unwrap().item.entity.name);
+    println!("You are carrying a {}.", player.character.entity.components.unwrap().get("back").unwrap().name);
 }
