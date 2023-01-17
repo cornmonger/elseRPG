@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::{collections::HashMap};
+use std::fmt;
 
 pub struct Area<'a> {
     id: u64,
@@ -43,8 +44,65 @@ pub enum HumanoidComponents {
     Back 
 }
 
+impl fmt::Display for HumanoidComponents {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for Entity<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for Character<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for Player<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for NPC<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for Area<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+impl<'a> fmt::Display for Zone<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}
+
+
+
+/*impl<'a> fmt::Display for Describable<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.write_str(self.name())
+    }
+}*/
+
+
 pub trait Describable<'a> {
     fn name (&self) -> &'a str;
+}
+
+impl<'a> Describable<'a> for HumanoidComponents {
+    fn name(&self) -> &'a str {
+        self.name()
+    }
 }
 
 impl<'a> Describable<'a> for Zone<'a> {
@@ -119,7 +177,11 @@ impl<'a> Player<'a> {
             }
     }
 
-    pub fn attached(&self, component_name: &'static str) -> &Entity<'a> {
+    pub fn attached<T: Describable<'a>> (&self, component: T) -> &Entity<'a> {
+        self.character.entity.components.as_ref().unwrap().get(component.name()).unwrap()
+    }
+
+    pub fn attached_as(&self, component_name: &'a str) -> &Entity<'a> {
         self.character.entity.components.as_ref().unwrap().get(component_name).unwrap()
     }
 }
