@@ -1,44 +1,92 @@
 pub mod template;
 
-pub struct Zone<'z> {
-    id: u64,
-    name: &'z str,
-    serial_id: u64,
-}
-
-pub struct Area<'a> {
-    id: u64,
-    name: &'a str
-}
-
-pub struct Permeability {
-    max_health: u16,
-    health: u16,
-    max_resist: u16,
-    resist: u16,
-    ability: u16,
-    max_ability: u16,
+pub enum Prototype<D: Clone + 'static> {
+    // No data exists.
+    None,
+    // The local context mutably owns the data (D).
+    Local (D),  
+    // A template object currently owns the immutable data (D). Mutability is possible through the Clone trait and a transition to Local.
+    Dynamic (D),  
+    // A template object permanently owns the immutable data (D).
+    Fixed (D)  
 }
 
 pub trait DescriptionTrait<'d> {
     fn name(&self) -> &'d str;
 }
 
-pub struct Description<'d> {
-    name: &'d str
+pub trait ZoneTrait<'z> {
+    fn id(&self) -> u64;
+    fn description(&self) -> &ZoneDescription<'z>;
+    fn generate_id(&mut self) -> u64;
 }
 
-pub enum Prototype<S> {
-    None,
-    Some (S),
-    Template (S)
+pub struct Zone<'z> {
+    id: u64,
+    description: ZoneDescription<'z>,
+    serial_id: u64,
+}
+
+impl<'z> ZoneTrait<'z> for Zone<'z> {
+    fn id(&self) -> u64 {
+        self.id
+    }
+
+    fn description(&self) -> &ZoneDescription {
+        &self.description
+    }
+
+    fn generate_id(&mut self) -> u64 {
+        self.serial_id += 1;
+        self.serial_id
+    }
+}
+
+struct ZoneDescription<'z> {
+    name: &'z str
+}
+
+impl<'z> DescriptionTrait<'z> for ZoneDescription<'z> {
+    fn name(&self) -> &'z str {
+        self.name
+    }
+}
+
+pub trait AreaTrait<'a> {
+    fn id(&self) -> u64;
+    fn description(&self) -> &AreaDescription<'z>;
+}
+
+pub struct Area<'a> {
+    id: u64,
+    description: AreaDescription<'z>
+}
+
+impl<'a> AreaTrait<'a> for Area<'a> {
+    fn id(&self) -> u64 {
+        self.id
+    }
+
+    fn description(&self) -> &AreaDescription<'z> {
+        &self.description
+    }
+}
+
+struct AreaDescription<'a> {
+    name: &'a str
+}
+
+impl<'a> DescriptionTrait<'a> for AreaDescription<'a> {
+    fn name(&self) -> &'a str {
+        self.name
+    }
 }
 
 pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
     fn id(&self) -> u64;
     fn template(&self) -> Option<T>;
     fn permeability(&self) -> Option<Permeability>;
-    fn description(&self) -> Prototype<Description>;
+    fn description(&self) -> Prototype<EntityDescription>;
     fn components(&self) -> Prototype<T>;
     fn contents(&self) -> Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
 }
@@ -50,6 +98,60 @@ pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
     description: Prototype<Description<'e>>,
     components: Prototype<T>,
     contains: Prototype<Vec<Box<dyn EntityTrait<'e,T>>>>
+}
+
+pub struct EntityDescription<'e> {
+    name: &'e str
+}
+
+impl<'e, T: EntityTemplateTrait> DescriptionTrait for Entity<'e, T> {
+    fn name(&self) -> &'d str {
+        self.name
+    }
+}
+
+pub trait PermeabilityTrait {
+    fn max_health(&self) -> u16;
+    fn max_resist(&self) -> u16;
+    fn max_ability(&self) -> u16;
+    fn health(&self) -> u16;
+    fn resist(&self) -> u16;
+    fn ability(&self) -> u16;
+}
+
+pub struct Permeability {
+    max_health: u16,
+    health: u16,
+    max_resist: u16,
+    resist: u16,
+    ability: u16,
+    max_ability: u16,
+}
+
+impl PermeabilityTrait for Permeability {
+    fn max_health(&self) -> u16 {
+        self.max_health
+    }
+
+    fn max_resist(&self) -> u16 {
+        self.max_resist
+    }
+
+    fn max_ability(&self) -> u16 {
+        self.max_ability
+    }
+
+    fn health(&self) -> u16 {
+        self.health
+    }
+
+    fn resist(&self) -> u16 {
+        self.resist
+    }
+
+    fn ability(&self) -> u16 {
+        self.ability
+    }
 }
 
 pub trait EntityTemplateTrait<'e> {
