@@ -1,4 +1,5 @@
-use elserpg::{Zone, Area, HumanoidComponents, HumanoidModel, Attachable};
+use elserpg::model::{Zone, Area, Attachable};
+use elserpg::model::template::{HumanoidComponents, HumanoidModel};
 
 fn main() {
     let mut zone = Zone::new();
