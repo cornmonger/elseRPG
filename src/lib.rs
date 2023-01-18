@@ -5,31 +5,40 @@ pub struct Area<'a> {
     name: &'a str
 }
 
-pub trait ComponentModel {
+pub trait ComponentModel<'e> {
+    type Components;
 
+    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>>;
 }
+
 pub enum HumanoidComponents {
     Head,
     Back 
 }
 
+pub enum NoComponents {}
+
 pub struct HumanoidModel<'e> {
-    head: Option<Entity<'e, Componentless>>,
-    back: Option<Entity<'e, Componentless>>
+    head: Option<Entity<'e, NoComponentModel>>,
+    back: Option<Entity<'e, NoComponentModel>>
 }
 
-pub struct Componentless {
+pub struct NoComponentModel {
 
 }
 
-impl ComponentModel for Componentless {
+impl<'e> ComponentModel<'e> for NoComponentModel {
+    type Components = NoComponents;
+
+    fn get(&self, _component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
+        None
+    }
 }
 
-impl<'e> ComponentModel for HumanoidModel<'e> {
-}
+impl<'e> ComponentModel<'e> for HumanoidModel<'e> {
+    type Components = HumanoidComponents;
 
-impl<'e> HumanoidModel<'e> {
-    fn get(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
+    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
         match component {
             HumanoidComponents::Head => Some(Box::new(self.head.as_ref().unwrap())),
             HumanoidComponents::Back => Some(Box::new(self.back.as_ref().unwrap()))
@@ -42,34 +51,34 @@ pub trait EntityTrait<'e> {
 }
 
 
-pub struct Entity<'e, M: ComponentModel> {
+pub struct Entity<'e, M: ComponentModel<'e>> {
     id: u64,
     name: &'e str,
     max_health: u16,
     health: u16,
-    max_armor: u16,
-    armor: u16,
+    max_resist: u16,
+    resist: u16,
     max_ability: u16,
     ability: u16,
     components: Option<M>,
     contains: Option<Vec<Box<dyn EntityTrait<'e>>>>
 }
 
-impl<'e, M: ComponentModel> EntityTrait<'e> for Entity<'e, M> {
+impl<'e, M: ComponentModel<'e>> EntityTrait<'e> for Entity<'e, M> {
     fn name(&self) -> &'e str {
         self.name
     }
 }
 
-pub struct Character<'e, M: ComponentModel> {
+pub struct Character<'e, M: ComponentModel<'e>> {
     entity: Entity<'e, M>,
 }
 
-pub struct NPC<'e, M: ComponentModel> {
+pub struct NPC<'e, M: ComponentModel<'e>> {
     character: Character<'e, M>
 }
 
-pub struct Player<'e, M: ComponentModel> {
+pub struct Player<'e, M: ComponentModel<'e>> {
     character: Character<'e, M>
 }
 
@@ -79,18 +88,46 @@ pub struct Zone<'z> {
     serial_id: u64,
 }
 
+pub trait Component<'e> {
+    fn components(&self) -> Option<Box<dyn Component<'e>>>;
+    fn get(&self) -> ComponentType<'e>;
+}
+
+pub enum ComponentType<'e> {
+    Entity (EntityComponent<'e, M: ComponentModel>),
+    Logical (LogicalComponent<'e>)
+}
+
+pub struct EntityComponent<'e, M: ComponentModel<'e>> {
+    entity: Entity<'e, M>,
+    subcomponents: Option<Box<Component
+}
+
+pub struct LogicalComponent<'e> {
+
+}
+
+impl<'e, M: ComponentModel<'e>> Component for EntityComponent<'e, M> {
+}
+
+impl<'e, M: ComponentModel<'e>> EntityComponent<'e, M> {
+    pub fn entity(&self) -> &Entity<'e, M> {
+        &self.entity
+    }
+}
+
 impl<'e> HumanoidModel<'e> {
     pub fn new(zone: &mut Zone) -> HumanoidModel<'e> {
         HumanoidModel::<'e> {
             head: None,
             back: Some(
-                    Entity::<'e, Componentless> {
+                    Entity::<'e, NoComponentModel> {
                         id: zone.next_id(),
                         name: "Backpack",
                         max_health: 100,
                         health: 100,
-                        max_armor: 0,
-                        armor: 0,
+                        max_resist: 0,
+                        resist: 0,
                         max_ability: 0,
                         ability: 100,
                         contains: None,
@@ -108,8 +145,8 @@ impl<'e> HumanoidModel<'e> {
                         name: "Player",
                         max_health: 100,
                         health: 100,
-                        max_armor: 100,
-                        armor: 0,
+                        max_resist: 100,
+                        resist: 0,
                         max_ability: 100,
                         ability: 100,
                         contains: None,
@@ -127,8 +164,8 @@ impl<'e> HumanoidModel<'e> {
                         name: "Troll",
                         max_health: 40,
                         health: 40,
-                        max_armor: 0,
-                        armor: 0,
+                        max_resist: 0,
+                        resist: 0,
                         max_ability: 0,
                         ability: 0,
                         contains: None,
@@ -159,11 +196,9 @@ impl HumanoidComponents {
     }
 }
 
-pub struct Component {
-    name: &'static str,
-}
 
-impl<'e, M: ComponentModel> Player<'e, M> {
+
+impl<'e, M: ComponentModel<'e>> Player<'e, M> {
     pub fn name(&self) -> &'e str {
         self.character.entity.name
     }
@@ -201,7 +236,7 @@ impl<'a> Area<'a> {
     }
 }
 
-impl<'e, M: ComponentModel> NPC<'e, M> {
+impl<'e, M: ComponentModel<'e>> NPC<'e, M> {
     pub fn name(&self) -> &'e str {
         self.character.entity.name
     }
