@@ -1,4 +1,2 @@
 # elseRPG
-A hybrid RPG engine that supports both text and graphical user interfaces.
-
-The data model uses component pattern concepts, which allows for the creation of complex and detailed entities.
+A composite model RPG engine that provides text, graphical, and procedural user interfaces.
