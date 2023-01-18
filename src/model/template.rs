@@ -1,3 +1,5 @@
+use super::{entity::Entity, character::Character, Attachable};
+
 
 impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
     fn attached(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
