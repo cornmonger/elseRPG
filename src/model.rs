@@ -11,17 +11,61 @@ pub struct Area<'a> {
     name: &'a str
 }
 
-pub struct Entity<'e, M: ComponentModel<'e>> {
-    id: u64,
-    name: &'e str,
+pub struct Permeability {
     max_health: u16,
     health: u16,
     max_resist: u16,
     resist: u16,
-    max_ability: u16,
     ability: u16,
-    components: Option<M>,
-    contains: Option<Vec<Box<dyn EntityTrait<'e>>>>
+    max_ability: u16,
+}
+
+pub trait DescriptionTrait<'d> {
+    fn name(&self) -> &'d str;
+}
+
+pub struct Description<'d> {
+    name: &'d str
+}
+
+pub enum Prototype<S> {
+    None,
+    Some (S),
+    Template (S)
+}
+
+pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
+    fn id(&self) -> u64;
+    fn template(&self) -> Option<T>;
+    fn permeability(&self) -> Option<Permeability>;
+    fn description(&self) -> Prototype<Description>;
+    fn components(&self) -> Prototype<T>;
+    fn contents(&self) -> Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
+}
+
+pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
+    id: u64,
+    template: Option<T>,
+    permeability: Option<Permeability>,
+    description: Prototype<Description<'e>>,
+    components: Prototype<T>,
+    contains: Prototype<Vec<Box<dyn EntityTrait<'e,T>>>>
+}
+
+pub trait EntityTemplateTrait<'e> {
+    type ComponentTemplate;
+
+    fn components(&self) -> Box<dyn Self::ComponentTemplate<'e>>;
+}
+
+pub struct EntityTemplate<'e> {
+    components: ComponentModel<'e>
+}
+
+impl EntityTemplateTrait for EntityTemplate {
+    fn model(&self) -> ComponentModel<'e> {
+        self.model
+    }
 }
 
 pub struct Character<'e, M: ComponentModel<'e>> {
@@ -74,10 +118,6 @@ impl<'e> ComponentModel<'e> for NoComponentModel {
     fn get(&self, _component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
         None
     }
-}
-
-pub trait EntityTrait<'e> {
-    fn name(&self) -> &'e str;
 }
 
 pub trait Component<'e> {
