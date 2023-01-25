@@ -14,7 +14,7 @@ pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
     template: Option<T>,
     permeability: Option<Permeability>,
     description: Prototype<EntityDescription<'e>>,
-    components: Prototype<T>,
+    components: Prototype<T::ComponentTemplate>,
     contains: Prototype<Vec<Box<dyn EntityTrait<'e,T>>>>
 }
 
@@ -75,7 +75,9 @@ impl PermeabilityTrait for Permeability {
 pub trait EntityTemplateTrait<'e> {
     type ComponentTemplate;
 
-    fn components(&self) -> Box<dyn Self::ComponentTemplate<'e>>;
+    fn components(&self) -> Box<dyn Self::ComponentTemplate>;
+    fn permeability(&self) -> &Permeability;
+    fn description(&self) -> &Description;
 }
 
 pub struct EntityTemplate<'e> {

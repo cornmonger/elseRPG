@@ -18,8 +18,3 @@ pub enum Prototype<D: Clone + 'static> {
 pub trait DescriptionTrait<'d> {
     fn name(&self) -> &'d str;
 }
-
-pub trait Attachable<'e, M, E> {
-    fn attached(&self, component: E) -> Option<Box<&dyn EntityTrait<'e>>>;
-}
-
