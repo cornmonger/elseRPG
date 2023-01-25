@@ -1,10 +1,12 @@
+pub mod component;
 pub mod zone;
 pub mod area;
 pub mod entity;
 pub mod character;
 pub mod template;
 
-pub enum Prototype<D: Clone + 'static> {
+/* TODO: pub enum Prototype<D: Clone + 'static> { */
+pub enum Prototype<D> {
     // No data exists.
     None,
     // The local context mutably owns the data (D).

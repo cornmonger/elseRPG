@@ -1,23 +1,13 @@
-pub struct Character<'e, M: ComponentModel<'e>> {
-    entity: Entity<'e, M>,
+use super::{component::ComponentModelTrait, entity::{Entity, EntityTemplateTrait}};
+
+pub struct Character<'e, M, T: EntityTemplateTrait<'e, ComponentModel = M>> {
+    entity: Entity<'e, T>,
 }
 
-pub struct NPC<'e, M: ComponentModel<'e>> {
-    character: Character<'e, M>
+pub struct NPC<'e, M, T: EntityTemplateTrait<'e, ComponentModel = M>> {
+    character: Character<'e, M, T>
 }
 
-pub struct Player<'e, M: ComponentModel<'e>> {
-    character: Character<'e, M>
-}
-
-impl<'e, M: ComponentModel<'e>> Player<'e, M> {
-    pub fn name(&self) -> &'e str {
-        self.character.entity.name
-    }
-}
-
-impl<'e, M: ComponentModel<'e>> NPC<'e, M> {
-    pub fn name(&self) -> &'e str {
-        self.character.entity.name
-    }
+pub struct Player<'e, M, T: EntityTemplateTrait<'e, ComponentModel = M>> {
+    character: Character<'e, M, T>
 }

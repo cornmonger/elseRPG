@@ -1,5 +1,3 @@
-pub mod component;
-
 use super::{Prototype, DescriptionTrait};
 
 pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
@@ -7,7 +5,7 @@ pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
     fn template(&self) -> Option<T>;
     fn permeability(&self) -> Option<Permeability>;
     fn description(&self) -> Prototype<EntityDescription>;
-    fn components(&self) -> Prototype<T::ComponentTemplate>;
+    fn components(&self) -> Prototype<T::ComponentModel>;
     fn contents(&self) -> Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
 }
 
@@ -22,12 +20,6 @@ pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
 
 pub struct EntityDescription<'e> {
     name: &'e str
-}
-
-impl<'e, T: EntityTemplateTrait> DescriptionTrait<'e> for Entity<'e, T> {
-    fn name(&self) -> &'e str {
-        self.name
-    }
 }
 
 pub trait PermeabilityTrait {
@@ -77,7 +69,7 @@ impl PermeabilityTrait for Permeability {
 pub trait EntityTemplateTrait<'e> {
     type ComponentModel;
 
-    fn components(&self) -> Self::ComponentModel;
-    fn permeability(&self) -> &Permeability;
-    fn description(&self) -> &EntityDescription;
+    //fn components(&self) -> Self::ComponentModel;
+    //fn permeability(&self) -> &Permeability;
+    //fn description(&self) -> &EntityDescription;
 }

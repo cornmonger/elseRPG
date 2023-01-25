@@ -20,21 +20,14 @@ impl<T> ComponentTrait for Component<T> {
 
 pub trait ComponentModelTrait {
     type AliasEnum; 
-    type Type;
 
-    fn component(&self, alias: Self::AliasEnum) -> Prototype<&Component<Self::Type>>;
+    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum>;
 }
 
 /*
 pub enum ComponentType<'e> {
     Entity (EntityComponent<'e, M: ComponentTemplate>),
     Logical (LogicalComponent<'e>)
-}
-
-pub enum NoComponents {}
-
-pub struct NoComponentModel {
-
 }
 
 pub struct EntityComponent<'e, M: ComponentTemplate<'e>> {
@@ -55,14 +48,6 @@ pub trait ComponentTemplate<'e> {
 impl<'e, M: ComponentTemplate<'e>> EntityTrait<'e> for Entity<'e, M> {
     fn name(&self) -> &'e str {
         self.name
-    }
-}
-
-impl<'e> ComponentTemplate<'e> for NoComponentModel {
-    type Components = NoComponents;
-
-    fn get(&self, _component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
-        None
     }
 }
 

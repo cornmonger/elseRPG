@@ -17,7 +17,7 @@ impl<'z> ZoneTrait<'z> for Zone<'z> {
         self.id
     }
 
-    fn description(&self) -> &ZoneDescription {
+    fn description(&self) -> &ZoneDescription<'z> {
         &self.description
     }
 

@@ -1,4 +1,4 @@
-use super::{DescriptionTrait, zone::Zone};
+use super::{DescriptionTrait, zone::{Zone, ZoneTrait}};
 
 pub trait AreaTrait<'a> {
     fn id(&self) -> u64;
@@ -33,13 +33,9 @@ impl<'a> DescriptionTrait<'a> for AreaDescription<'a> {
 impl<'a> Area<'a> {
     pub fn new(zone: &mut Zone<'a>) -> Area<'a> {
         Area {
-            id: zone.next_id(),
+            id: zone.generate_id(),
             description: AreaDescription { name: "Lobby" }
         }
-    }
-
-    pub fn name(&self) -> &'a str {
-        self.name
     }
 }
 

@@ -1,25 +1,57 @@
-use super::entity::{EntityTemplateTrait, component::{ComponentModelTrait, Component}, Entity};
+use super::{entity::{EntityTemplateTrait, Entity, EntityTrait}, component::{Component, ComponentModelTrait, ComponentTrait}, Prototype};
 
 pub struct HumanoidEntityTemplate {
 
 }
 
 impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate {
-    type ComponentModel = HumanoidComponentModel;
+    type ComponentModel = HumanoidComponentModel<'e>;
 }
 
-pub enum HumanoidComponentAlias {
-    Head,
-    Back,
+pub enum HumanoidComponentAlias<'e> {
+    Head (Component<Entity<'e, EmptyEntityTemplate>>),
+    Back (Component<Entity<'e, EmptyEntityTemplate>>),
 }
 
-pub struct HumanoidComponentModel {
-    head: Component<Entity>,
-    back: Component<Entity>,
+pub struct HumanoidComponentModel<'e> {
+    head: Option<HumanoidComponentAlias<'e>>,
+    back: Option<HumanoidComponentAlias<'e>>,
 }
 
-impl ComponentModelTrait for HumanoidComponentModel {
-    type AliasEnum = HumanoidComponentAlias; 
+impl<'e> ComponentModelTrait for HumanoidComponentModel<'e> {
+    type AliasEnum = HumanoidComponentAlias<'e>; 
+
+    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum> {
+        match alias {
+            HumanoidComponentAlias::Head(c) => Some(&c),
+            HumanoidComponentAlias::Back(c) => Some(&c),
+            _ => None
+        }
+    }
+}
+
+
+pub struct EmptyEntityTemplate {
+
+}
+
+impl<'e> EntityTemplateTrait<'e> for EmptyEntityTemplate {
+    type ComponentModel = EmptyComponentModel;
+
+}
+
+pub enum EmptyComponentAlias {}
+
+pub struct EmptyComponentModel {
+
+}
+
+impl ComponentModelTrait for EmptyComponentModel {
+    type AliasEnum = EmptyComponentAlias;
+
+    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum> {
+        None
+    }
 }
 
 /* impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
