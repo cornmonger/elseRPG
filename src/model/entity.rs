@@ -1,3 +1,5 @@
+pub mod component;
+
 use super::{Prototype, DescriptionTrait};
 
 pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
@@ -5,7 +7,7 @@ pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
     fn template(&self) -> Option<T>;
     fn permeability(&self) -> Option<Permeability>;
     fn description(&self) -> Prototype<EntityDescription>;
-    fn components(&self) -> Prototype<T>;
+    fn components(&self) -> Prototype<T::ComponentTemplate>;
     fn contents(&self) -> Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
 }
 
@@ -14,7 +16,7 @@ pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
     template: Option<T>,
     permeability: Option<Permeability>,
     description: Prototype<EntityDescription<'e>>,
-    components: Prototype<T::ComponentTemplate>,
+    components: Prototype<T::ComponentModel>,
     contains: Prototype<Vec<Box<dyn EntityTrait<'e,T>>>>
 }
 
@@ -73,74 +75,9 @@ impl PermeabilityTrait for Permeability {
 }
 
 pub trait EntityTemplateTrait<'e> {
-    type ComponentTemplate;
+    type ComponentModel;
 
-    fn components(&self) -> Box<dyn Self::ComponentTemplate>;
+    fn components(&self) -> Self::ComponentModel;
     fn permeability(&self) -> &Permeability;
-    fn description(&self) -> &Description;
+    fn description(&self) -> &EntityDescription;
 }
-
-pub struct EntityTemplate<'e> {
-    components: ComponentModel<'e>
-}
-
-impl EntityTemplateTrait for EntityTemplate {
-    fn model(&self) -> ComponentModel<'e> {
-        self.model
-    }
-}
-
-pub enum ComponentType<'e> {
-    Entity (EntityComponent<'e, M: ComponentModel>),
-    Logical (LogicalComponent<'e>)
-}
-
-pub enum NoComponents {}
-
-pub struct NoComponentModel {
-
-}
-
-pub struct EntityComponent<'e, M: ComponentModel<'e>> {
-    entity: Entity<'e, M>,
-    subcomponents: Option<Box<Component>>
-}
-
-pub struct LogicalComponent<'e> {
-
-}
-
-pub trait ComponentModel<'e> {
-    type Components;
-
-    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>>;
-}
-
-impl<'e, M: ComponentModel<'e>> EntityTrait<'e> for Entity<'e, M> {
-    fn name(&self) -> &'e str {
-        self.name
-    }
-}
-
-impl<'e> ComponentModel<'e> for NoComponentModel {
-    type Components = NoComponents;
-
-    fn get(&self, _component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
-        None
-    }
-}
-
-pub trait Component<'e> {
-    fn components(&self) -> Option<Box<dyn Component<'e>>>;
-    fn get(&self) -> ComponentType<'e>;
-}
-
-impl<'e, M: ComponentModel<'e>> Component for EntityComponent<'e, M> {
-}
-
-impl<'e, M: ComponentModel<'e>> EntityComponent<'e, M> {
-    pub fn entity(&self) -> &Entity<'e, M> {
-        &self.entity
-    }
-}
-

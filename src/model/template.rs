@@ -1,13 +1,56 @@
-use super::{entity::Entity, character::Character, Attachable};
+use super::entity::{EntityTemplateTrait, component::{ComponentModelTrait, Component}, Entity};
 
+pub struct HumanoidEntityTemplate {
 
-impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
+}
+
+impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate {
+    type ComponentModel = HumanoidComponentModel;
+}
+
+pub enum HumanoidComponentAlias {
+    Head,
+    Back,
+}
+
+pub struct HumanoidComponentModel {
+    head: Component<Entity>,
+    back: Component<Entity>,
+}
+
+impl ComponentModelTrait for HumanoidComponentModel {
+    type AliasEnum = HumanoidComponentAlias; 
+}
+
+/* impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
     fn attached(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
         self.character.entity.components.as_ref().unwrap().get(component)
     }
+} */
+
+
+
+/* pub struct HumanoidModel<'e> {
+    head: Option<Entity<'e, NoComponentModel>>,
+    back: Option<Entity<'e, NoComponentModel>>
 }
 
-impl HumanoidComponents {
+pub enum HumanoidComponents {
+    Head,
+    Back 
+}
+
+
+impl<'e> ComponentModel<'e> for HumanoidModel<'e> {
+    type Components = HumanoidComponents;
+
+    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
+        match component {
+            HumanoidComponents::Head => Some(Box::new(self.head.as_ref().unwrap())),
+            HumanoidComponents::Back => Some(Box::new(self.back.as_ref().unwrap()))
+        }
+    }
+}impl HumanoidComponents {
     pub fn name(&self) -> &'static str {
         match self {
             HumanoidComponents::Head => "head",
@@ -76,26 +119,5 @@ impl<'e> HumanoidModel<'e> {
             }
     }
 
-}
+} */
 
-pub struct HumanoidModel<'e> {
-    head: Option<Entity<'e, NoComponentModel>>,
-    back: Option<Entity<'e, NoComponentModel>>
-}
-
-pub enum HumanoidComponents {
-    Head,
-    Back 
-}
-
-
-impl<'e> ComponentModel<'e> for HumanoidModel<'e> {
-    type Components = HumanoidComponents;
-
-    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
-        match component {
-            HumanoidComponents::Head => Some(Box::new(self.head.as_ref().unwrap())),
-            HumanoidComponents::Back => Some(Box::new(self.back.as_ref().unwrap()))
-        }
-    }
-}

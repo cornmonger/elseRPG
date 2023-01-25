@@ -1,11 +1,13 @@
+use super::{DescriptionTrait, zone::Zone};
+
 pub trait AreaTrait<'a> {
     fn id(&self) -> u64;
-    fn description(&self) -> &AreaDescription<'z>;
+    fn description(&self) -> &AreaDescription<'a>;
 }
 
 pub struct Area<'a> {
     id: u64,
-    description: AreaDescription<'z>
+    description: AreaDescription<'a>
 }
 
 impl<'a> AreaTrait<'a> for Area<'a> {
@@ -13,7 +15,7 @@ impl<'a> AreaTrait<'a> for Area<'a> {
         self.id
     }
 
-    fn description(&self) -> &AreaDescription<'z> {
+    fn description(&self) -> &AreaDescription<'a> {
         &self.description
     }
 }
@@ -32,7 +34,7 @@ impl<'a> Area<'a> {
     pub fn new(zone: &mut Zone<'a>) -> Area<'a> {
         Area {
             id: zone.next_id(),
-            name: "Lobby"
+            description: AreaDescription { name: "Lobby" }
         }
     }
 
