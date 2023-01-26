@@ -27,7 +27,7 @@ impl<'z> ZoneTrait<'z> for Zone<'z> {
     }
 }
 
-struct ZoneDescription<'z> {
+pub struct ZoneDescription<'z> {
     name: &'z str
 }
 

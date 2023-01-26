@@ -19,9 +19,10 @@ impl<T> ComponentTrait for Component<T> {
 }
 
 pub trait ComponentModelTrait {
-    type AliasEnum; 
+    type Alias;
+    type Slot; 
 
-    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum>;
+    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot>;
 }
 
 /*

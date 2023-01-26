@@ -20,7 +20,7 @@ impl<'a> AreaTrait<'a> for Area<'a> {
     }
 }
 
-struct AreaDescription<'a> {
+pub struct AreaDescription<'a> {
     name: &'a str
 }
 

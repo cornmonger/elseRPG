@@ -17,6 +17,17 @@ pub enum Prototype<D> {
     Fixed (D)  
 }
 
+impl<D> Prototype<D> {
+    pub fn unwrap(&self) -> &D {
+        match self {
+            Self::Local(d) => d,
+            Self::Dynamic(d) => d,
+            Self::Fixed(d) => d,
+            _ => { panic!("Unable to unwrap Prototype object!"); }
+        }
+    }
+}
+
 pub trait DescriptionTrait<'d> {
     fn name(&self) -> &'d str;
 }

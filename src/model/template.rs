@@ -1,4 +1,7 @@
-use super::{entity::{EntityTemplateTrait, Entity, EntityTrait}, component::{Component, ComponentModelTrait, ComponentTrait}, Prototype};
+pub use super::entity::Entity;
+pub use super::entity::{EntityTemplateTrait, EntityTrait, Permeability, EntityDescription};
+use super::component::{Component, ComponentModelTrait, ComponentTrait};
+use super::{Prototype, zone::{Zone, ZoneTrait}, character::{Player, Character, NPC}};
 
 pub struct HumanoidEntityTemplate {
 
@@ -8,25 +11,36 @@ impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate {
     type ComponentModel = HumanoidComponentModel<'e>;
 }
 
-pub enum HumanoidComponentAlias<'e> {
+pub enum HumanoidComponentAlias {
+    Head,
+    Back,
+}
+
+pub enum HumanoidComponentSlot <'e> {
     Head (Component<Entity<'e, EmptyEntityTemplate>>),
     Back (Component<Entity<'e, EmptyEntityTemplate>>),
 }
 
 pub struct HumanoidComponentModel<'e> {
-    head: Option<HumanoidComponentAlias<'e>>,
-    back: Option<HumanoidComponentAlias<'e>>,
+    head: Option<HumanoidComponentSlot<'e>>,
+    back: Option<HumanoidComponentSlot<'e>>,
 }
 
 impl<'e> ComponentModelTrait for HumanoidComponentModel<'e> {
-    type AliasEnum = HumanoidComponentAlias<'e>; 
+    type Alias = HumanoidComponentAlias;
+    type Slot = HumanoidComponentSlot<'e>; 
 
-    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum> {
-        match alias {
-            HumanoidComponentAlias::Head(c) => Some(&c),
-            HumanoidComponentAlias::Back(c) => Some(&c),
-            _ => None
+    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
+        let slot = { match alias {
+            HumanoidComponentAlias::Head => &self.head,
+            HumanoidComponentAlias::Back => &self.back
+        } };
+
+        if let Some(component) = slot {
+            Some(&component);
         }
+
+        None
     }
 }
 
@@ -42,14 +56,17 @@ impl<'e> EntityTemplateTrait<'e> for EmptyEntityTemplate {
 
 pub enum EmptyComponentAlias {}
 
+pub enum EmptyComponentSlot {}
+
 pub struct EmptyComponentModel {
 
 }
 
 impl ComponentModelTrait for EmptyComponentModel {
-    type AliasEnum = EmptyComponentAlias;
+    type Alias = EmptyComponentAlias;
+    type Slot = EmptyComponentSlot;
 
-    fn component(&self, alias: Self::AliasEnum) -> Option<&Self::AliasEnum> {
+    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
         None
     }
 }
@@ -89,67 +106,56 @@ impl<'e> ComponentModel<'e> for HumanoidModel<'e> {
             HumanoidComponents::Back => "back"
         }
     }
-}
+} */
 
 
-impl<'e> HumanoidModel<'e> {
-    pub fn new(zone: &mut Zone) -> HumanoidModel<'e> {
-        HumanoidModel::<'e> {
-            head: None,
-            back: Some(
-                    Entity::<'e, NoComponentModel> {
-                        id: zone.next_id(),
-                        name: "Backpack",
+impl<'e> HumanoidEntityTemplate {
+    pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidComponentModel<'e>, Self> {
+        Player {
+            character: Character {
+                entity: Entity {
+                    id: zone.generate_id(),
+                    template: Some(Self {}),
+                    description: Prototype::Local(EntityDescription {
+                        name: "Player"
+                    }),
+                    permeability: Prototype::Local(Permeability {
                         max_health: 100,
+                        max_resist: 100,
+                        max_ability: 100,
                         health: 100,
-                        max_resist: 0,
-                        resist: 0,
-                        max_ability: 0,
-                        ability: 100,
-                        contains: None,
-                        components: None
-                    }
-            ) 
+                        resist: 100,
+                        ability: 100
+                    }),
+                    contents: Prototype::None,
+                    components: Prototype::None
+                }
+            }
         }
     }
 
-    pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidModel<'e>> {
-        Player {
-                character: Character {
-                    entity: Entity {
-                        id: zone.next_id(),
-                        name: "Player",
-                        max_health: 100,
-                        health: 100,
-                        max_resist: 100,
-                        resist: 0,
-                        max_ability: 100,
-                        ability: 100,
-                        contains: None,
-                        components: Some(HumanoidModel::new(zone))
-                    }
-                }
-            }
-    }
-
-    pub fn new_npc(zone: &mut Zone) -> NPC<'e, HumanoidModel<'e>> {
+    pub fn new_npc(zone: &mut Zone) -> NPC<'e, HumanoidComponentModel<'e>, Self> {
         NPC {
-                character: Character {
-                    entity: Entity {
-                        id: zone.next_id(),
-                        name: "Troll",
-                        max_health: 40,
-                        health: 40,
-                        max_resist: 0,
-                        resist: 0,
-                        max_ability: 0,
-                        ability: 0,
-                        contains: None,
-                        components: Some(HumanoidModel::new(zone))
-                    }
+            character: Character {
+                entity: Entity {
+                    id: zone.generate_id(),
+                    template: Some(Self {}),
+                    description: Prototype::Local(EntityDescription {
+                        name: "Troll"
+                    }),
+                    permeability: Prototype::Local(Permeability {
+                        max_health: 50,
+                        max_resist: 50,
+                        max_ability: 50,
+                        health: 50,
+                        resist: 50,
+                        ability: 50 
+                    }),
+                    contents: Prototype::None,
+                    components: Prototype::None
                 }
             }
+        }
     }
-
-} */
+}
 
