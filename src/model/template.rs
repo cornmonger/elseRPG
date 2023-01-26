@@ -46,10 +46,10 @@ impl<'e> ComponentModelTrait for HumanoidComponentModel<'e> {
         } };
 
         if let Some(component) = slot {
-            Some(&component);
+            Some(&component)
+        } else {
+            None
         }
-
-        None
     }
 }
 
