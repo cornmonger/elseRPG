@@ -16,6 +16,15 @@ pub enum HumanoidComponentAlias {
     Back,
 }
 
+impl HumanoidComponentAlias {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Head => "head",
+            Self::Back => "back"
+        }
+    }
+}
+
 pub enum HumanoidComponentSlot <'e> {
     Head (Component<Entity<'e, EmptyEntityTemplate>>),
     Back (Component<Entity<'e, EmptyEntityTemplate>>),
@@ -71,45 +80,28 @@ impl ComponentModelTrait for EmptyComponentModel {
     }
 }
 
-/* impl<'e> Attachable<'e, HumanoidModel<'e>, HumanoidComponents> for Player<'e, HumanoidModel<'e>>  {
-    fn attached(&self, component: HumanoidComponents) -> Option<Box<&dyn EntityTrait<'e>>> {
-        self.character.entity.components.as_ref().unwrap().get(component)
-    }
-} */
-
-
-
-/* pub struct HumanoidModel<'e> {
-    head: Option<Entity<'e, NoComponentModel>>,
-    back: Option<Entity<'e, NoComponentModel>>
-}
-
-pub enum HumanoidComponents {
-    Head,
-    Back 
-}
-
-
-impl<'e> ComponentModel<'e> for HumanoidModel<'e> {
-    type Components = HumanoidComponents;
-
-    fn get(&self, component: Self::Components) -> Option<Box<&dyn EntityTrait<'e>>> {
-        match component {
-            HumanoidComponents::Head => Some(Box::new(self.head.as_ref().unwrap())),
-            HumanoidComponents::Back => Some(Box::new(self.back.as_ref().unwrap()))
-        }
-    }
-}impl HumanoidComponents {
-    pub fn name(&self) -> &'static str {
-        match self {
-            HumanoidComponents::Head => "head",
-            HumanoidComponents::Back => "back"
-        }
-    }
-} */
-
 
 impl<'e> HumanoidEntityTemplate {
+    pub fn new_backpack(zone: &mut Zone) -> Entity<'e, EmptyEntityTemplate> {
+        Entity {
+            id: zone.generate_id(),
+            template: Some(EmptyEntityTemplate {}),
+            description: Prototype::Local(EntityDescription {
+                name: "Backpack"
+            }),
+            permeability: Prototype::Local(Permeability {
+                max_health: 10,
+                max_resist: 10,
+                max_ability: 10,
+                health: 10,
+                resist: 10,
+                ability: 10
+            }),
+            contents: Prototype::None,
+            components: Prototype::None
+        }
+    }
+
     pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidComponentModel<'e>, Self> {
         Player {
             character: Character {
@@ -128,7 +120,10 @@ impl<'e> HumanoidEntityTemplate {
                         ability: 100
                     }),
                     contents: Prototype::None,
-                    components: Prototype::None
+                    components: Prototype::Local(HumanoidComponentModel {
+                        head: None,
+                        back: Some(HumanoidComponentSlot::Back(Component { object: Self::new_backpack(zone) }))
+                    })
                 }
             }
         }

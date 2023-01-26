@@ -6,7 +6,7 @@ pub trait ComponentTrait {
 }
 
 pub struct Component<T> {
-    object: T
+    pub(crate) object: T
 }
 
 impl<T> ComponentTrait for Component<T> {

@@ -1,4 +1,4 @@
-use elserpg::model::{zone::{Zone, ZoneTrait}, area::{Area, AreaTrait}, template::{HumanoidEntityTemplate, EntityTrait}, DescriptionTrait};
+use elserpg::model::{zone::{Zone, ZoneTrait}, area::{Area, AreaTrait}, template::{HumanoidEntityTemplate, EntityTrait, HumanoidComponentAlias, HumanoidComponentSlot}, DescriptionTrait, component::{ComponentModelTrait, ComponentTrait}};
 
 
 fn main() {
@@ -10,7 +10,12 @@ fn main() {
     println!("Welcome to {}, {}.", zone.description().name(), player.character.entity.description().unwrap().name());
     println!("You arrive in {}.", lobby.description().name());
     println!("You see a {}.", troll.character.entity.description().unwrap().name());
-    /* println!("You are wearing a {} on your {}.",
-        player.attached(HumanoidComponents::Back).unwrap().name(),
-        HumanoidComponents::Back.name() ); */
+    
+    let slot = player.character.entity.components().unwrap().component(HumanoidComponentAlias::Back).unwrap();
+    if let HumanoidComponentSlot::Back(component) = slot {
+        println!("You are wearing a {} on your {}.",
+            component.get().description().unwrap().name(),
+            HumanoidComponentAlias::Back.name() ); 
+    }
+
 }
