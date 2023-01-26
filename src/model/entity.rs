@@ -101,7 +101,7 @@ impl PermeabilityTrait for Permeability {
 pub trait EntityTemplateTrait<'e> {
     type ComponentModel;
 
-    //fn components(&self) -> Self::ComponentModel;
+    fn component_model(&self) -> &Self::ComponentModel;
     //fn permeability(&self) -> &Permeability;
     //fn description(&self) -> &EntityDescription;
 }

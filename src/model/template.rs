@@ -2,15 +2,21 @@ pub use super::entity::Entity;
 pub use super::entity::{EntityTemplateTrait, EntityTrait, Permeability, EntityDescription};
 use super::component::{Component, ComponentModelTrait};
 use super::{Prototype, zone::{Zone, ZoneTrait}, character::{Player, Character, NPC}};
+use strum::EnumIter;
 
-pub struct HumanoidEntityTemplate {
-
+pub struct HumanoidEntityTemplate<'e> {
+    component_model: HumanoidComponentModel<'e> 
 }
 
-impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate {
+impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate<'e> {
     type ComponentModel = HumanoidComponentModel<'e>;
+
+    fn component_model(&self) -> &Self::ComponentModel {
+        &self.component_model
+    }
 }
 
+#[derive(Clone, Copy, EnumIter)]
 pub enum HumanoidComponentAlias {
     Head,
     Back,
@@ -21,6 +27,14 @@ impl HumanoidComponentAlias {
         match self {
             Self::Head => "head",
             Self::Back => "back"
+        }
+    }
+
+    pub fn by(name: &str) -> Result<HumanoidComponentAlias, ()> {
+        match name {
+            "head" => Ok(Self::Head),
+            "back" => Ok(Self::Back),
+            _ => Err(())
         }
     }
 }
@@ -51,15 +65,23 @@ impl<'e> ComponentModelTrait for HumanoidComponentModel<'e> {
             None
         }
     }
+
+    /*fn aliases(&self) -> &str {
+        let it = Alias::iter();
+    }*/
 }
 
 
 pub struct EmptyEntityTemplate {
-
+    component_model: EmptyComponentModel
 }
 
 impl<'e> EntityTemplateTrait<'e> for EmptyEntityTemplate {
     type ComponentModel = EmptyComponentModel;
+
+    fn component_model(&self) -> &Self::ComponentModel {
+        &self.component_model
+    }
 
 }
 
@@ -81,11 +103,11 @@ impl ComponentModelTrait for EmptyComponentModel {
 }
 
 
-impl<'e> HumanoidEntityTemplate {
+impl<'e> HumanoidEntityTemplate<'e> {
     pub fn new_backpack(zone: &mut Zone) -> Entity<'e, EmptyEntityTemplate> {
         Entity {
             id: zone.generate_id(),
-            template: Some(EmptyEntityTemplate {}),
+            template: Some(EmptyEntityTemplate { component_model: EmptyComponentModel {} }),
             description: Prototype::Local(EntityDescription {
                 name: "Backpack"
             }),
@@ -107,7 +129,7 @@ impl<'e> HumanoidEntityTemplate {
             character: Character {
                 entity: Entity {
                     id: zone.generate_id(),
-                    template: Some(Self {}),
+                    template: Some(Self { component_model: HumanoidComponentModel { head: None, back: None } }),
                     description: Prototype::Local(EntityDescription {
                         name: "Player"
                     }),
@@ -134,7 +156,7 @@ impl<'e> HumanoidEntityTemplate {
             character: Character {
                 entity: Entity {
                     id: zone.generate_id(),
-                    template: Some(Self {}),
+                    template: Some(Self { component_model: HumanoidComponentModel { head: None, back: None } }),
                     description: Prototype::Local(EntityDescription {
                         name: "Troll"
                     }),
