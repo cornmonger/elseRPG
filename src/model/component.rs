@@ -1,4 +1,3 @@
-use crate::model::Prototype;
 
 pub trait ComponentTrait {
     type Type;

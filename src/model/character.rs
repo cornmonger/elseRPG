@@ -1,4 +1,4 @@
-use super::{component::ComponentModelTrait, entity::{Entity, EntityTemplateTrait}};
+use super::{entity::{Entity, EntityTemplateTrait}};
 
 pub struct Character<'e, M, T: EntityTemplateTrait<'e, ComponentModel = M>> {
     pub entity: Entity<'e, T>,

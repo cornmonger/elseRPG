@@ -1,6 +1,6 @@
 pub use super::entity::Entity;
 pub use super::entity::{EntityTemplateTrait, EntityTrait, Permeability, EntityDescription};
-use super::component::{Component, ComponentModelTrait, ComponentTrait};
+use super::component::{Component, ComponentModelTrait};
 use super::{Prototype, zone::{Zone, ZoneTrait}, character::{Player, Character, NPC}};
 
 pub struct HumanoidEntityTemplate {
@@ -66,7 +66,7 @@ impl ComponentModelTrait for EmptyComponentModel {
     type Alias = EmptyComponentAlias;
     type Slot = EmptyComponentSlot;
 
-    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
+    fn component(&self, _alias: Self::Alias) -> Option<&Self::Slot> {
         None
     }
 }
