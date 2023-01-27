@@ -1,10 +1,14 @@
 pub trait CompositionTrait<'e> {
     type Alias;
     type Slot; 
-    type Iterator: std::iter::Iterator;
 
     fn component(&self, alias: Self::Alias) -> Option<&Self::Slot>;
-    fn components(&'e self) -> Self::Iterator;
+}
+
+pub trait CompositionIteratorTrait<'i, 'e> {
+    type Iterator: std::iter::Iterator;
+
+    fn components(&'i self) -> Self::Iterator;
 }
 
 pub trait ComponentTrait {

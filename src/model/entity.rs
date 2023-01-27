@@ -5,7 +5,7 @@ pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
     fn template(&self) -> &Option<T>;
     fn permeability(&self) -> &Prototype<Permeability>;
     fn description(&self) -> &Prototype<EntityDescription>;
-    fn components(&self) -> Prototype<&T::Composite>;
+    fn components(&self) -> &Prototype<T::Composite>;
     fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
 }
 
@@ -35,8 +35,8 @@ impl<'e, T: EntityTemplateTrait<'e>> EntityTrait<'e, T> for Entity<'e, T> {
         &self.description
     }
 
-    fn components(&self) -> Prototype<&T::Composite> {
-        Prototype::Local(self.components.unwrap())
+    fn components(&self) -> &Prototype<T::Composite> {
+        &self.components
     }
 
     fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e, T>>>> {
