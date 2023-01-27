@@ -1,11 +1,11 @@
-use super::{Prototype, DescriptionTrait};
+use super::{Prototype, DescriptionTrait, composition::CompositionTrait};
 
 pub trait EntityTrait<'e, T: EntityTemplateTrait<'e>> {
     fn id(&self) -> u64;
     fn template(&self) -> &Option<T>;
     fn permeability(&self) -> &Prototype<Permeability>;
     fn description(&self) -> &Prototype<EntityDescription>;
-    fn components(&self) -> &Prototype<T::ComponentModel>;
+    fn components(&self) -> Prototype<&T::Composite>;
     fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e, T>>>>;
 }
 
@@ -14,7 +14,7 @@ pub struct Entity<'e, T: EntityTemplateTrait<'e>> {
     pub(crate) template: Option<T>,
     pub(crate) permeability: Prototype<Permeability>,
     pub(crate) description: Prototype<EntityDescription<'e>>,
-    pub(crate) components: Prototype<T::ComponentModel>,
+    pub(crate) components: Prototype<T::Composite>,
     pub(crate) contents: Prototype<Vec<Box<dyn EntityTrait<'e,T>>>>
 }
 
@@ -35,8 +35,8 @@ impl<'e, T: EntityTemplateTrait<'e>> EntityTrait<'e, T> for Entity<'e, T> {
         &self.description
     }
 
-    fn components(&self) -> &Prototype<T::ComponentModel> {
-        &self.components
+    fn components(&self) -> Prototype<&T::Composite> {
+        Prototype::Local(self.components.unwrap())
     }
 
     fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e, T>>>> {
@@ -99,9 +99,9 @@ impl PermeabilityTrait for Permeability {
 }
 
 pub trait EntityTemplateTrait<'e> {
-    type ComponentModel;
+    type Composite: CompositionTrait<'e>;
 
-    fn component_model(&self) -> &Self::ComponentModel;
+    fn component_model(&self) -> &Self::Composite;
     //fn permeability(&self) -> &Permeability;
     //fn description(&self) -> &EntityDescription;
 }

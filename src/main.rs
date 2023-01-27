@@ -1,4 +1,4 @@
-use elserpg::model::{zone::{Zone, ZoneTrait}, area::{Area, AreaTrait}, template::{HumanoidEntityTemplate, EntityTrait, HumanoidComponentAlias, HumanoidComponentSlot, EntityTemplateTrait}, DescriptionTrait, component::{ComponentModelTrait, ComponentTrait}};
+use elserpg::model::{zone::{Zone, ZoneTrait}, area::{Area, AreaTrait}, template::{HumanoidEntityTemplate, EntityTrait, HumanoidPart, HumanoidComponentSlot, EntityTemplateTrait, HumanoidComposition}, DescriptionTrait, composition::{CompositionTrait, ComponentTrait}};
 use strum::IntoEnumIterator;
 
 
@@ -13,15 +13,15 @@ fn main() {
     println!("You see a {}.", troll.character.entity.description().unwrap().name());
     
     // pragmatically
-    let slot = player.character.entity.components().unwrap().component(HumanoidComponentAlias::Back).unwrap();
+    let slot = player.character.entity.components().unwrap().component(HumanoidPart::Back).unwrap();
     if let HumanoidComponentSlot::Back(component) = slot {
         println!("You are wearing a {} on your {}.",
             component.get().description().unwrap().name(),
-            HumanoidComponentAlias::Back.name() ); 
+            HumanoidPart::Back.name() ); 
     }
 
     // by name
-    let alias = HumanoidComponentAlias::by("back").unwrap();
+    let alias = HumanoidPart::by("back").unwrap();
     let slot = player.character.entity.components().unwrap().component(alias).unwrap();
     if let HumanoidComponentSlot::Back(component) = slot {
         println!("You are wearing a {} on your {}.",
@@ -29,14 +29,20 @@ fn main() {
             alias.name() ); 
     }
     
-    // by entity's template
+    // by entity template enum iteration directly
     let template = player.character.entity.template().as_ref().unwrap();
     let alias = template.component_model();
-    let aliases = HumanoidComponentAlias::iter();
+    let aliases = HumanoidPart::iter();
     for i in aliases {
         println!("Components: {}", i.name());
     }
 
+    let player_entity = &player.character.entity;
+    for c in player_entity.components().unwrap().components() {
+        println!("Components: {}", c.entity::<HumanoidEntityTemplate>().unwrap().description().unwrap().name());
+    }
+
+    drop(player_entity);
 
 
 }

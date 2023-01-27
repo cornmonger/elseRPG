@@ -1,4 +1,4 @@
-pub mod component;
+pub mod composition;
 pub mod zone;
 pub mod area;
 pub mod entity;

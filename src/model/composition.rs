@@ -1,3 +1,11 @@
+pub trait CompositionTrait<'e> {
+    type Alias;
+    type Slot; 
+    type Iterator: std::iter::Iterator;
+
+    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot>;
+    fn components(&'e self) -> Self::Iterator;
+}
 
 pub trait ComponentTrait {
     type Type;
@@ -17,10 +25,4 @@ impl<T> ComponentTrait for Component<T> {
     }
 }
 
-pub trait ComponentModelTrait {
-    type Alias;
-    type Slot; 
-
-    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot>;
-}
 

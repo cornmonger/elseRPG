@@ -1,85 +1,17 @@
 pub use super::entity::Entity;
 pub use super::entity::{EntityTemplateTrait, EntityTrait, Permeability, EntityDescription};
-use super::component::{Component, ComponentModelTrait};
+use super::composition::{Component, CompositionTrait};
 use super::{Prototype, zone::{Zone, ZoneTrait}, character::{Player, Character, NPC}};
-use strum::EnumIter;
-
-pub struct HumanoidEntityTemplate<'e> {
-    component_model: HumanoidComponentModel<'e> 
-}
-
-impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate<'e> {
-    type ComponentModel = HumanoidComponentModel<'e>;
-
-    fn component_model(&self) -> &Self::ComponentModel {
-        &self.component_model
-    }
-}
-
-#[derive(Clone, Copy, EnumIter)]
-pub enum HumanoidComponentAlias {
-    Head,
-    Back,
-}
-
-impl HumanoidComponentAlias {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Head => "head",
-            Self::Back => "back"
-        }
-    }
-
-    pub fn by(name: &str) -> Result<HumanoidComponentAlias, ()> {
-        match name {
-            "head" => Ok(Self::Head),
-            "back" => Ok(Self::Back),
-            _ => Err(())
-        }
-    }
-}
-
-pub enum HumanoidComponentSlot <'e> {
-    Head (Component<Entity<'e, EmptyEntityTemplate>>),
-    Back (Component<Entity<'e, EmptyEntityTemplate>>),
-}
-
-pub struct HumanoidComponentModel<'e> {
-    head: Option<HumanoidComponentSlot<'e>>,
-    back: Option<HumanoidComponentSlot<'e>>,
-}
-
-impl<'e> ComponentModelTrait for HumanoidComponentModel<'e> {
-    type Alias = HumanoidComponentAlias;
-    type Slot = HumanoidComponentSlot<'e>; 
-
-    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
-        let slot = { match alias {
-            HumanoidComponentAlias::Head => &self.head,
-            HumanoidComponentAlias::Back => &self.back
-        } };
-
-        if let Some(component) = slot {
-            Some(&component)
-        } else {
-            None
-        }
-    }
-
-    /*fn aliases(&self) -> &str {
-        let it = Alias::iter();
-    }*/
-}
-
+use strum::{EnumIter, IntoEnumIterator};
 
 pub struct EmptyEntityTemplate {
     component_model: EmptyComponentModel
 }
 
 impl<'e> EntityTemplateTrait<'e> for EmptyEntityTemplate {
-    type ComponentModel = EmptyComponentModel;
+    type Composite = EmptyComponentModel;
 
-    fn component_model(&self) -> &Self::ComponentModel {
+    fn component_model(&self) -> &Self::Composite {
         &self.component_model
     }
 
@@ -93,12 +25,134 @@ pub struct EmptyComponentModel {
 
 }
 
-impl ComponentModelTrait for EmptyComponentModel {
+impl<'e> CompositionTrait<'e> for EmptyComponentModel {
     type Alias = EmptyComponentAlias;
     type Slot = EmptyComponentSlot;
+    type Iterator = EmptyCompositionIterator;
 
     fn component(&self, _alias: Self::Alias) -> Option<&Self::Slot> {
         None
+    }
+
+    fn components(&'e self) -> Self::Iterator {
+        EmptyCompositionIterator {}
+    }
+}
+
+pub struct EmptyCompositionIterator {}
+
+impl Iterator for EmptyCompositionIterator {
+    type Item = EmptyCompositionIterator;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        None
+    }
+}
+
+pub struct HumanoidEntityTemplate<'e> {
+    component_model: HumanoidComposition<'e> 
+}
+
+impl<'e> EntityTemplateTrait<'e> for HumanoidEntityTemplate<'e> {
+    type Composite = HumanoidComposition<'e>;
+
+    fn component_model(&self) -> &Self::Composite {
+        &self.component_model
+    }
+}
+
+
+
+#[derive(Clone, Copy, EnumIter)]
+pub enum HumanoidPart {
+    Head,
+    Back,
+}
+
+impl HumanoidPart {
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::Head => "head",
+            Self::Back => "back"
+        }
+    }
+
+    pub fn by(name: &str) -> Result<HumanoidPart, ()> {
+        match name {
+            "head" => Ok(Self::Head),
+            "back" => Ok(Self::Back),
+            _ => Err(())
+        }
+    }
+}
+
+pub enum HumanoidComponentSlot <'e> {
+    Head (Component<Entity<'e, EmptyEntityTemplate>>),
+    Back (Component<Entity<'e, EmptyEntityTemplate>>),
+}
+
+impl<'e> HumanoidComponentSlot<'e> {
+    pub fn entity<T>(&self) -> Option<Box<dyn EntityTrait<'e, T>>> {
+        None
+    }
+}
+
+pub struct HumanoidComposition<'e> {
+    head: Option<HumanoidComponentSlot<'e>>,
+    back: Option<HumanoidComponentSlot<'e>>,
+}
+
+impl<'e> CompositionTrait<'e> for HumanoidComposition<'e> {
+    type Alias = HumanoidPart;
+    type Slot = HumanoidComponentSlot<'e>; 
+    type Iterator = HumanoidIterator<'e>;
+
+    fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
+        let slot = { match alias {
+            HumanoidPart::Head => &self.head,
+            HumanoidPart::Back => &self.back
+        } };
+
+        if let Some(component) = slot {
+            Some(&component)
+        } else {
+            None
+        }
+    }
+
+    fn components(&'e self) -> Self::Iterator {
+        HumanoidIterator::new(&self)
+    }
+
+    /*fn aliases(&self) -> &str {
+        let it = Alias::iter();
+    }*/
+}
+
+pub struct HumanoidIterator<'e> {
+    composition: &'e HumanoidComposition<'e>,
+    enum_iter: HumanoidPartIter,
+}
+
+impl<'e> HumanoidIterator<'e> {
+    pub(crate) fn new(composition: &'e HumanoidComposition<'e>) -> HumanoidIterator<'e> {
+        HumanoidIterator {
+            composition,
+            enum_iter: HumanoidPart::iter(),
+        }
+    }
+}
+
+impl<'e> Iterator for HumanoidIterator<'e> {
+    type Item = &'e HumanoidComponentSlot<'e>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next_alias= self.enum_iter.next();
+        if let Some(alias) = next_alias {
+            self.composition.component(alias)
+        } else {
+            None
+        }
     }
 }
 
@@ -124,12 +178,12 @@ impl<'e> HumanoidEntityTemplate<'e> {
         }
     }
 
-    pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidComponentModel<'e>, Self> {
+    pub fn new_player(zone: &mut Zone) -> Player<'e, HumanoidComposition<'e>, Self> {
         Player {
             character: Character {
                 entity: Entity {
                     id: zone.generate_id(),
-                    template: Some(Self { component_model: HumanoidComponentModel { head: None, back: None } }),
+                    template: Some(Self { component_model: HumanoidComposition { head: None, back: None } }),
                     description: Prototype::Local(EntityDescription {
                         name: "Player"
                     }),
@@ -142,7 +196,7 @@ impl<'e> HumanoidEntityTemplate<'e> {
                         ability: 100
                     }),
                     contents: Prototype::None,
-                    components: Prototype::Local(HumanoidComponentModel {
+                    components: Prototype::Local(HumanoidComposition {
                         head: None,
                         back: Some(HumanoidComponentSlot::Back(Component { object: Self::new_backpack(zone) }))
                     })
@@ -151,12 +205,12 @@ impl<'e> HumanoidEntityTemplate<'e> {
         }
     }
 
-    pub fn new_npc(zone: &mut Zone) -> NPC<'e, HumanoidComponentModel<'e>, Self> {
+    pub fn new_npc(zone: &mut Zone) -> NPC<'e, HumanoidComposition<'e>, Self> {
         NPC {
             character: Character {
                 entity: Entity {
                     id: zone.generate_id(),
-                    template: Some(Self { component_model: HumanoidComponentModel { head: None, back: None } }),
+                    template: Some(Self { component_model: HumanoidComposition { head: None, back: None } }),
                     description: Prototype::Local(EntityDescription {
                         name: "Troll"
                     }),
