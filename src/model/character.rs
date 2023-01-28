@@ -9,7 +9,7 @@ pub struct Character<'e:'i,'i, T: EntityTemplateTrait<'e,'i, Composite = M>, M> 
 }
 
 impl<'e:'i,'i, T: EntityTemplateTrait<'e,'i, Composite = M>, M> Character<'e,'i, T, M> {
-    pub fn entity(&'i self) -> &'i Entity<'e,'i,T> {
+    pub fn entity(&'i self) -> &'e Entity<'e,'i,T> {
         &self.entity
     }
 }
@@ -23,7 +23,7 @@ pub struct Player<'e:'i,'i, T: EntityTemplateTrait<'e,'i, Composite = M>, M> {
 }
 
 impl<'e:'i,'i, T: EntityTemplateTrait<'e,'i, Composite = M>, M> Player<'e,'i, T, M> {
-    pub fn character(&'i self) -> &'i Character<'e,'i,T,M> {
+    pub fn character(&'i self) -> &'e Character<'e,'i,T,M> {
         &self.character
     }
 }

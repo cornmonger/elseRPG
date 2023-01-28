@@ -29,7 +29,8 @@ fn main() {
             alias.name() ); 
     }
     
-    let player_entity= player.character().entity();
+    let character = player.character();
+    let player_entity= character.entity();
     test_backpack(&player_entity);
 
     // by entity template enum iteration directly
@@ -51,8 +52,8 @@ fn main() {
 }
 
 fn test_backpack<'e:'i,'i, T: EntityTemplateTrait<'e,'i>>(humanoid: &'i Entity<'e,'i, T>) {
-    let template = humanoid.template().as_ref().unwrap();
-    let composition = humanoid.composition().unwrap();
+    //let template = humanoid.template().as_ref().unwrap();
+    //let composition = humanoid.composition().unwrap();
 
-    let iter = composition.components();
+    //let iter = composition.components();
 }
