@@ -8,7 +8,7 @@ pub struct EmptyEntityTemplate {
     component_model: EmptyComponentModel
 }
 
-impl<'e> EntityTemplateTrait<'e> for EmptyEntityTemplate {
+impl<'e:'i,'i> EntityTemplateTrait<'e,'i> for EmptyEntityTemplate {
     type Composite = EmptyComponentModel;
 
     fn component_model(&self) -> &Self::Composite {
@@ -23,7 +23,7 @@ pub enum EmptyComponentSlot {}
 
 pub struct EmptyComponentModel {}
 
-impl<'e> CompositionTrait<'e> for EmptyComponentModel {
+impl<'e:'i,'i> CompositionTrait<'e,'i> for EmptyComponentModel {
     type Alias = EmptyComponentAlias;
     type Slot = EmptyComponentSlot;
 
@@ -32,7 +32,7 @@ impl<'e> CompositionTrait<'e> for EmptyComponentModel {
     }
 }
 
-impl<'i,'e> CompositionIteratorTrait<'i,'e> for EmptyComponentModel {
+impl<'e:'i, 'i> CompositionIteratorTrait<'e,'i> for EmptyComponentModel {
     type Iterator = EmptyCompositionIterator;
 
     fn components(&self) -> Self::Iterator {
@@ -50,12 +50,12 @@ impl Iterator for EmptyCompositionIterator {
     }
 }
 
-pub struct Humanoid<'e> {
-    component_model: HumanoidComposition<'e> 
+pub struct Humanoid<'e:'i,'i> {
+    component_model: HumanoidComposition<'e,'i> 
 }
 
-impl<'e> EntityTemplateTrait<'e> for Humanoid<'e> {
-    type Composite = HumanoidComposition<'e>;
+impl<'e:'i, 'i> EntityTemplateTrait<'e,'i> for Humanoid<'e,'i> {
+    type Composite = HumanoidComposition<'e,'i>;
 
     fn component_model(&self) -> &Self::Composite {
         &self.component_model
@@ -85,28 +85,28 @@ impl HumanoidPart {
     }
 }
 
-pub enum HumanoidComponentSlot <'e> {
-    Head (Component<Entity<'e, EmptyEntityTemplate>>),
-    Back (Component<Entity<'e, EmptyEntityTemplate>>),
+pub enum HumanoidComponentSlot <'e:'i,'i> {
+    Head (Component<Entity<'e,'i, EmptyEntityTemplate>>),
+    Back (Component<Entity<'e,'i, EmptyEntityTemplate>>),
 }
 
-impl<'e> HumanoidComponentSlot<'e> {
-    pub fn component<T>(&self) -> Box<&dyn EntityTrait<'e, T>> {
-        match self {
-            Self::Head(component) => Box::new(&component as &EntityTrait<'e, T>),
+impl<'e:'i,'i> HumanoidComponentSlot<'e,'i> {
+    /* pub fn component<T>(&self) -> Box<&dyn EntityTrait<'e, T>> {
+        /* match self {
+            Self::Head(component) => Box::new(&component as &dyn EntityTrait<'e, T>),
             Self::Back(component) => component
-        }
-    }
+        } */
+    } */
 }
 
-pub struct HumanoidComposition<'e> {
-    head: Option<HumanoidComponentSlot<'e>>,
-    back: Option<HumanoidComponentSlot<'e>>,
+pub struct HumanoidComposition<'e:'i,'i> {
+    head: Option<HumanoidComponentSlot<'e,'i>>,
+    back: Option<HumanoidComponentSlot<'e,'i>>,
 }
 
-impl<'e> CompositionTrait<'e> for HumanoidComposition<'e> {
+impl<'e: 'i, 'i> CompositionTrait<'e,'i> for HumanoidComposition<'e,'i> {
     type Alias = HumanoidPart;
-    type Slot = HumanoidComponentSlot<'e>; 
+    type Slot = HumanoidComponentSlot<'e,'i>; 
 
     fn component(&self, alias: Self::Alias) -> Option<&Self::Slot> {
         let slot = { match alias {
@@ -123,8 +123,8 @@ impl<'e> CompositionTrait<'e> for HumanoidComposition<'e> {
 
 }
 
-impl <'i,'e: 'i> CompositionIteratorTrait<'i,'e> for HumanoidComposition<'e> {
-    type Iterator = HumanoidIterator<'i,'e>;
+impl <'e: 'i, 'i> CompositionIteratorTrait<'e, 'i> for HumanoidComposition<'e,'i> {
+    type Iterator = HumanoidIterator<'e,'i>;
 
     fn components(&'i self) -> Self::Iterator {
         HumanoidIterator {
@@ -136,8 +136,8 @@ impl <'i,'e: 'i> CompositionIteratorTrait<'i,'e> for HumanoidComposition<'e> {
 
 }
 
-pub struct HumanoidIterator<'i, 'e> {
-    composition: &'i HumanoidComposition<'e>,
+pub struct HumanoidIterator<'e:'i, 'i> {
+    composition: &'i HumanoidComposition<'e,'i>,
     enum_iter: HumanoidPartIter,
 }
 
@@ -150,8 +150,8 @@ pub struct HumanoidIterator<'i, 'e> {
     }
 } */
 
-impl<'i, 'e> Iterator for HumanoidIterator<'i, 'e> {
-    type Item = Option<&'i HumanoidComponentSlot<'e>>;
+impl<'e:'i, 'i> Iterator for HumanoidIterator<'e,'i> {
+    type Item = Option<&'i HumanoidComponentSlot<'e,'i>>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let next_alias= self.enum_iter.next();
@@ -165,8 +165,8 @@ impl<'i, 'e> Iterator for HumanoidIterator<'i, 'e> {
 }
 
 
-impl<'e> Humanoid<'e> {
-    pub fn new_backpack(zone: &mut Zone) -> Entity<'e, EmptyEntityTemplate> {
+impl<'e:'i,'i> Humanoid<'e,'i> {
+    pub fn new_backpack(zone: &mut Zone) -> Entity<'e,'i, EmptyEntityTemplate> {
         Entity {
             id: zone.generate_id(),
             template: Some(EmptyEntityTemplate { component_model: EmptyComponentModel {} }),
@@ -182,11 +182,11 @@ impl<'e> Humanoid<'e> {
                 ability: 10
             }),
             contents: Prototype::None,
-            components: Prototype::None
+            composition: Prototype::None
         }
     }
 
-    pub fn new_player(zone: &mut Zone) -> Player<'e, Self, HumanoidComposition<'e>> {
+    pub fn new_player(zone: &mut Zone) -> Player<'e,'i, Self, HumanoidComposition<'e,'i>> {
         Player {
             character: Character {
                 entity: Entity {
@@ -204,7 +204,7 @@ impl<'e> Humanoid<'e> {
                         ability: 100
                     }),
                     contents: Prototype::None,
-                    components: Prototype::Local(HumanoidComposition {
+                    composition: Prototype::Local(HumanoidComposition {
                         head: None,
                         back: Some(HumanoidComponentSlot::Back(Component { object: Self::new_backpack(zone) }))
                     })
@@ -213,7 +213,7 @@ impl<'e> Humanoid<'e> {
         }
     }
 
-    pub fn new_npc(zone: &mut Zone) -> NPC<'e, Self, HumanoidComposition<'e>> {
+    pub fn new_npc(zone: &mut Zone) -> NPC<'e,'i, Self, HumanoidComposition<'e,'i>> {
         NPC {
             character: Character {
                 entity: Entity {
@@ -231,7 +231,7 @@ impl<'e> Humanoid<'e> {
                         ability: 50 
                     }),
                     contents: Prototype::None,
-                    components: Prototype::None
+                    composition: Prototype::None
                 }
             }
         }
