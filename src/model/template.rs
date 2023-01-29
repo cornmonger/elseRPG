@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub use super::entity::Entity;
-use super::entity::EntityComponent;
+use super::entity::{EntityComponent, EntityCompositionTrait};
 pub use super::entity::{EntityTrait, Permeability, EntityDescription};
 use super::{zone::{Zone}, character::{Player, Character}};
 use strum::{EnumIter};
@@ -37,6 +37,16 @@ pub struct HumanoidComposition {
     back: EntityComponent
 }
 
+impl EntityCompositionTrait for HumanoidComposition {
+    fn get(&self, key: isize) -> Result<&EntityComponent, ()> {
+        match key {
+            1 => Ok(&self.head),
+            2 => Ok(&self.back),
+            _ => Err(())
+        }
+    }
+}
+    
 impl HumanoidComposition {
     pub fn new(zone: &mut Zone) -> HumanoidComposition {
         HumanoidComposition {
@@ -47,6 +57,7 @@ impl HumanoidComposition {
                 components: None,
                 attachments: None,
                 contents: None,
+                componentz: None,
             })},
             back: EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
                 id: zone.generate_id(),
@@ -57,6 +68,7 @@ impl HumanoidComposition {
                     (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Humanoid::new_backpack(zone)) })
                 ].into_iter().collect()),
                 contents: None,
+                componentz: None,
             })}
         }
     }
@@ -78,6 +90,7 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: Some(vec![Self::new_apple(zone)]),
+            componentz: None,
         }
     }
 
@@ -89,6 +102,7 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: None,
+            componentz: None
         }
     }
 
@@ -103,6 +117,7 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: None,
+            componentz: None,
         })});
 
         map.insert(HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
@@ -114,6 +129,7 @@ impl Humanoid {
                 (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Self::new_backpack(zone)) })
             ].into_iter().collect()),
             contents: None,
+            componentz: None,
         })});
 
         map
@@ -138,6 +154,7 @@ impl Humanoid {
                     components: Some(Self::new_composition(zone)),
                     attachments: None,
                     contents: None,
+                    componentz: None
                 }
             }
         }

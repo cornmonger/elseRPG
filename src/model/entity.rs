@@ -20,6 +20,7 @@ pub struct Entity {
     pub(crate) components: Option<HashMap<isize, EntityComponent>>,
     pub(crate) attachments: Option<HashMap<isize, EntityComponent>>,
     pub(crate) contents: Option<Vec<Entity>>,
+    pub(crate) componentz: Option<Box<dyn EntityCompositionTrait>>
 }
 
 impl EntityTrait for Entity {
@@ -179,5 +180,5 @@ impl EntityComponentTrait for EntityComponent {
 }
 
 pub trait EntityCompositionTrait {
-    fn get(key: isize) -> EntityComponent;
+    fn get(&self, key: isize) -> Result<&EntityComponent, ()>;
 }
