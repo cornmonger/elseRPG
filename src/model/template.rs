@@ -57,7 +57,6 @@ impl HumanoidComposition {
                 components: None,
                 attachments: None,
                 contents: None,
-                componentz: None,
             })},
             back: EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
                 id: zone.generate_id(),
@@ -68,7 +67,6 @@ impl HumanoidComposition {
                     (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Humanoid::new_backpack(zone)) })
                 ].into_iter().collect()))),
                 contents: None,
-                componentz: None,
             })}
         }
     }
@@ -90,7 +88,6 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: Some(vec![Self::new_apple(zone)]),
-            componentz: None,
         }
     }
 
@@ -102,7 +99,6 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: None,
-            componentz: None
         }
     }
 
@@ -115,7 +111,6 @@ impl Humanoid {
             components: None,
             attachments: None,
             contents: None,
-            componentz: None,
         })});
 
         map.insert(HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
@@ -127,7 +122,6 @@ impl Humanoid {
                 (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Self::new_backpack(zone)) })
             ].into_iter().collect()))),
             contents: None,
-            componentz: None,
         })});
 
         map
@@ -149,10 +143,9 @@ impl Humanoid {
                         resist: 100,
                         ability: 100
                     }),
-                    components: Some(Self::new_composition(zone)),
+                    components: Some(Box::new(HumanoidComposition::new(zone))),
                     attachments: None,
                     contents: None,
-                    componentz: Some(Box::new(HumanoidComposition::new(zone)))
                 }
             }
         }

@@ -10,8 +10,8 @@ fn main() {
     println!("Welcome to {}, {}.", zone.description().unwrap().name(), player.character().entity().description().unwrap().name());
     println!("You arrive in {}.", lobby.description().unwrap().name());
 
+    test_composition(player.character().entity());
     test_backpack(player.character().entity());
-    test_backpackz(player.character().entity());
 }
 
 fn test_backpack(entity: &Entity) {
@@ -32,20 +32,11 @@ fn test_backpack(entity: &Entity) {
     );
 }
 
-fn test_backpackz(entity: &Entity) {
-    println!("You have a {} inside of ze {} on your {}.",
-        entity
-            .compozent(HumanoidPart::Back as isize).unwrap()
-            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
-            .contents().unwrap()
-            .get(0).unwrap()
-            .description().unwrap().name(),
-        entity
-            .compozent(HumanoidPart::Back as isize).unwrap()
-            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
-            .description().unwrap().name(),
-        entity
-            .compozent(HumanoidPart::Back as isize).unwrap().entity().unwrap()
-            .description().unwrap().name(),
-    );
+fn test_composition(entity: &Entity) {
+    // manual composition
+    let components = entity.components().unwrap();
+    println!("You are composed of: {}, {}",
+        components.get(HumanoidPart::Head as isize).unwrap().entity().unwrap().description().unwrap().name(),
+        components.get(HumanoidPart::Back as isize).unwrap().entity().unwrap().description().unwrap().name() );
+
 }
