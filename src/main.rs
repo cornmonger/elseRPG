@@ -16,6 +16,7 @@ fn main() {
 
     println!("You arrive in {}.", lobby.description().unwrap().name());
 
+    test_composition(player.character().entity());
     test_backpack(player.character().entity());
 }
 
@@ -34,4 +35,13 @@ fn test_backpack(entity: &Entity) {
         entity
             .component(HumanoidPart::Back as isize).unwrap().entity().unwrap()
             .description().unwrap().name() );
+}
+
+fn test_composition(entity: &Entity) {
+    // manual composition
+    let components = entity.components().unwrap();
+    println!("You are composed of: {}, {}",
+        components.get(HumanoidPart::Head as isize).unwrap().entity().unwrap().description().unwrap().name(),
+        components.get(HumanoidPart::Back as isize).unwrap().entity().unwrap().description().unwrap().name() );
+
 }

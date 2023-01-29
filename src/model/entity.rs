@@ -6,10 +6,10 @@ pub trait EntityTrait {
     fn id(&self) -> u64;
     fn permeability(&self) -> Option<&Permeability>;
     fn description(&self) -> Option<&EntityDescription>;
-    fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
-    fn component(&self, key: isize) -> Option<&EntityComponent>;
-    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>>;
-    fn attachment(&self, key: isize) -> Option<&EntityComponent>;
+    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
+    fn component(&self, key: isize) -> Result<&EntityComponent, ()>;
+    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
+    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()>;
     fn contents(&self) -> Option<&Vec<Entity>>;
 }
 
@@ -17,8 +17,8 @@ pub struct Entity {
     pub(crate) id: u64,
     pub(crate) permeability: Option<Permeability>,
     pub(crate) description: Option<EntityDescription>,
-    pub(crate) components: Option<HashMap<isize, EntityComponent>>,
-    pub(crate) attachments: Option<HashMap<isize, EntityComponent>>,
+    pub(crate) components: Option<Box<dyn EntityCompositionTrait>>,
+    pub(crate) attachments: Option<Box<dyn EntityCompositionTrait>>,
     pub(crate) contents: Option<Vec<Entity>>,
 }
 
@@ -35,33 +35,34 @@ impl EntityTrait for Entity {
         self.description.as_ref()
     }
 
-    fn components(&self) -> Option<&HashMap<isize, EntityComponent>> {
+    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
         self.components.as_ref()
     }
 
-    fn component(&self, key: isize) -> Option<&EntityComponent> {
+    fn component(&self, key: isize) -> Result<&EntityComponent, ()> {
         if let Some(components) = &self.components {
-            components.get(&key)
+            components.get(key)
         } else {
-            None
+            Err(())
         }
     }
 
-    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>> {
+    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
         self.attachments.as_ref()
     }
 
-    fn attachment(&self, key: isize) -> Option<&EntityComponent> {
+    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()> {
         if let Some(attachments) = &self.attachments {
-            attachments.get(&key)
+            attachments.get(key)
         } else {
-            None
+            Err(())
         }
     }
 
     fn contents(&self) -> Option<&Vec<Entity>> {
         self.contents.as_ref()
     }
+
 }
 
 pub struct EntityDescription {
@@ -120,10 +121,10 @@ impl PermeabilityTrait for Permeability {
 
 pub trait EntityComponentTrait {
     fn entity(&self) -> Option<&Entity>;
-    fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
-    fn component(&self, key: isize) -> Option<&EntityComponent>;
-    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>>;
-    fn attachment(&self, key: isize) -> Option<&EntityComponent>;
+    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
+    fn component(&self, key: isize) -> Result<&EntityComponent, ()>;
+    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
+    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()>;
     fn contents(&self) -> Option<&Vec<Entity>>;
  }
 
@@ -137,7 +138,7 @@ impl EntityComponentTrait for EntityComponent {
         self.entity.as_ref()
     }
 
-    fn components(&self) -> Option<&HashMap<isize, EntityComponent>> {
+    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
         if let Some(entity) = self.entity.as_ref() {
             entity.components()
         } else {
@@ -145,15 +146,15 @@ impl EntityComponentTrait for EntityComponent {
         }
     }
 
-    fn component(&self, key: isize) -> Option<&EntityComponent> {
+    fn component(&self, key: isize) -> Result<&EntityComponent, ()> {
         if let Some(components) = self.components() {
-            components.get(&key)
+            components.get(key)
         } else {
-            None
+            Err(())
         }
     }
 
-    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>> {
+    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
         if let Some(entity) = self.entity.as_ref() {
             entity.attachments()
         } else {
@@ -161,11 +162,11 @@ impl EntityComponentTrait for EntityComponent {
         }
     }
 
-    fn attachment(&self, key: isize) -> Option<&EntityComponent> {
+    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()> {
         if let Some(attachments) = self.attachments() {
-            attachments.get(&key)
+            attachments.get(key)
         } else {
-            None
+            Err(())
         }
     }
 
@@ -178,3 +179,30 @@ impl EntityComponentTrait for EntityComponent {
     }
 }
 
+pub trait EntityCompositionTrait {
+    fn get(&self, key: isize) -> Result<&EntityComponent, ()>;
+}
+
+pub struct UnrestrainedEntityComposition {
+    map: HashMap<isize, EntityComponent>
+}
+
+impl EntityCompositionTrait for UnrestrainedEntityComposition {
+    fn get(&self, key: isize) -> Result<&EntityComponent, ()> {
+        if let Some(value) = self.map.get(&key) {
+            Ok(value)
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl UnrestrainedEntityComposition {
+    pub fn new(map: HashMap<isize, EntityComponent>) -> Self {
+        Self { map }
+    }
+
+    pub fn empty() -> Self {
+        Self { map: HashMap::new() }
+    }
+}
