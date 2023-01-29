@@ -4,30 +4,55 @@ pub use super::entity::Entity;
 use super::entity::{EntityComponent, EntityCompositionTrait, UnrestrainedEntityComposition};
 pub use super::entity::{EntityTrait, Permeability, EntityDescription};
 use super::{zone::{Zone}, character::{Player, Character}};
-use strum::{EnumIter};
 
 pub struct Humanoid {
 }
 
-#[derive(Clone, Copy, EnumIter)]
+#[derive(Clone, Copy)]
 pub enum HumanoidPart {
     Head = 1,
     Back = 2,
 }
 
-impl HumanoidPart {
-    pub fn name(&self) -> &'static str {
-        match self {
-            Self::Head => "head",
-            Self::Back => "back"
+pub mod humanoid {
+    pub enum Component {
+        Head = 1,
+        Torso = 2,
+        Waist = 3,
+        Legs = 4,
+    }
+    pub mod head {
+        pub enum Attachment {
+            WearOn = 1
         }
     }
-
-    pub fn by(name: &str) -> Result<HumanoidPart, ()> {
-        match name {
-            "head" => Ok(Self::Head),
-            "back" => Ok(Self::Back),
-            _ => Err(())
+    pub mod torso {
+        pub enum Component {
+            Back = 1,
+            Chest = 2,
+        }
+        pub enum Attachment {
+            WearOn = 1
+        }
+        pub mod back {
+            pub enum Attachment {
+                StrapTo = 1,
+            }
+        }
+    }
+    pub mod legs {
+        pub enum Component {
+            Left = 1,
+            Right = 2
+        }
+        pub enum Attachment {
+            WearOn = 1
+        }
+        pub mod leg {
+            pub enum Component {
+                Shin = 1,
+                Foot = 2,
+            }
         }
     }
 }
@@ -104,31 +129,6 @@ impl Humanoid {
             attachments: None,
             contents: None,
         }
-    }
-
-    fn new_composition(zone: &mut Zone) -> HashMap<isize, EntityComponent> {
-        let mut map = HashMap::<isize, EntityComponent>::new();
-        map.insert(HumanoidPart::Head as isize, EntityComponent { key: HumanoidPart::Head as isize, entity: Some( Entity {
-            id: zone.generate_id(),
-            description: Some(EntityDescription { name: "Head".to_owned() }),
-            permeability: None,
-            components: None,
-            attachments: None,
-            contents: None,
-        })});
-
-        map.insert(HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
-            id: zone.generate_id(),
-            description: Some(EntityDescription { name: "Back".to_owned() }),
-            permeability: None,
-            components: None,
-            attachments: Some(Box::new(UnrestrainedEntityComposition::new([
-                (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Self::new_backpack(zone)) })
-            ].into_iter().collect()))),
-            contents: None,
-        })});
-
-        map
     }
 
     pub fn new_player(zone: &mut Zone) -> Player {
