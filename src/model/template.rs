@@ -106,8 +106,6 @@ impl Humanoid {
         }
     }
 
-
-
     fn new_composition(zone: &mut Zone) -> HashMap<isize, EntityComponent> {
         let mut map = HashMap::<isize, EntityComponent>::new();
         map.insert(HumanoidPart::Head as isize, EntityComponent { key: HumanoidPart::Head as isize, entity: Some( Entity {
@@ -154,7 +152,7 @@ impl Humanoid {
                     components: Some(Self::new_composition(zone)),
                     attachments: None,
                     contents: None,
-                    componentz: None
+                    componentz: Some(Box::new(HumanoidComposition::new(zone)))
                 }
             }
         }

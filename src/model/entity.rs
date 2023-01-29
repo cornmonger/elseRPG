@@ -11,6 +11,8 @@ pub trait EntityTrait {
     fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>>;
     fn attachment(&self, key: isize) -> Option<&EntityComponent>;
     fn contents(&self) -> Option<&Vec<Entity>>;
+    fn componentz(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
+    fn compozent(&self, key: isize) -> Result<&EntityComponent, ()>;
 }
 
 pub struct Entity {
@@ -62,6 +64,18 @@ impl EntityTrait for Entity {
 
     fn contents(&self) -> Option<&Vec<Entity>> {
         self.contents.as_ref()
+    }
+
+    fn componentz(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
+        self.componentz.as_ref()
+    }
+
+    fn compozent(&self, key: isize) -> Result<&EntityComponent, ()> {
+        if let Some(componentz) = &self.componentz {
+            componentz.get(key)
+        } else {
+            Err(())
+        }
     }
 }
 

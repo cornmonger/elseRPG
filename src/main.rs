@@ -11,6 +11,7 @@ fn main() {
     println!("You arrive in {}.", lobby.description().unwrap().name());
 
     test_backpack(player.character().entity());
+    test_backpackz(player.character().entity());
 }
 
 fn test_backpack(entity: &Entity) {
@@ -27,6 +28,24 @@ fn test_backpack(entity: &Entity) {
             .description().unwrap().name(),
         entity
             .component(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .description().unwrap().name(),
+    );
+}
+
+fn test_backpackz(entity: &Entity) {
+    println!("You have a {} inside of ze {} on your {}.",
+        entity
+            .compozent(HumanoidPart::Back as isize).unwrap()
+            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .contents().unwrap()
+            .get(0).unwrap()
+            .description().unwrap().name(),
+        entity
+            .compozent(HumanoidPart::Back as isize).unwrap()
+            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .description().unwrap().name(),
+        entity
+            .compozent(HumanoidPart::Back as isize).unwrap().entity().unwrap()
             .description().unwrap().name(),
     );
 }
