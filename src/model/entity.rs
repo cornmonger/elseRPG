@@ -178,3 +178,6 @@ impl EntityComponentTrait for EntityComponent {
     }
 }
 
+pub trait EntityCompositionTrait {
+    fn get(key: isize) -> EntityComponent;
+}

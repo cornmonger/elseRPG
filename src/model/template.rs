@@ -32,6 +32,43 @@ impl HumanoidPart {
     }
 }
 
+pub struct HumanoidComposition {
+    head: EntityComponent,
+    back: EntityComponent
+}
+
+impl HumanoidComposition {
+    pub fn new(zone: &mut Zone) -> HumanoidComposition {
+        HumanoidComposition {
+            head: EntityComponent { key: HumanoidPart::Head as isize, entity: Some( Entity {
+                id: zone.generate_id(),
+                description: Some(EntityDescription { name: "Head".to_owned() }),
+                permeability: None,
+                components: None,
+                attachments: None,
+                contents: None,
+            })},
+            back: EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
+                id: zone.generate_id(),
+                description: Some(EntityDescription { name: "Back".to_owned() }),
+                permeability: None,
+                components: None,
+                attachments: Some([
+                    (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Humanoid::new_backpack(zone)) })
+                ].into_iter().collect()),
+                contents: None,
+            })}
+        }
+    }
+
+    pub fn by(&self, alias: HumanoidPart) -> &EntityComponent {
+        match alias {
+            HumanoidPart::Head => &self.head,
+            HumanoidPart::Back => &self.back
+        }
+    }
+}
+
 impl Humanoid {
     pub fn new_backpack(zone: &mut Zone) -> Entity {
         Entity {
