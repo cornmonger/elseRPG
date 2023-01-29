@@ -1,56 +1,61 @@
-use super::{Prototype, DescriptionTrait, composition::CompositionTrait};
+use std::collections::HashMap;
 
-pub trait EntityTrait<'e:'i,'i, T: EntityTemplateTrait<'e,'i>> {
+use super::{DescriptionTrait};
+
+pub trait EntityTrait {
     fn id(&self) -> u64;
-    fn template(&self) -> &Option<T>;
-    fn permeability(&self) -> &Prototype<Permeability>;
-    fn description(&self) -> &Prototype<EntityDescription>;
-    fn composition(&self) -> &Prototype<T::Composite>;
-    fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e,'i, T>>>>;
+    fn permeability(&self) -> Option<&Permeability>;
+    fn description(&self) -> Option<&EntityDescription>;
+    fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
+    fn component(&self, key: isize) -> Option<&EntityComponent>;
+    fn contents(&self) -> Option<&Vec<Entity>>;
 }
 
-pub struct Entity<'e:'i,'i, T: EntityTemplateTrait<'e,'i>> {
+pub struct Entity {
     pub(crate) id: u64,
-    pub(crate) template: Option<T>,
-    pub(crate) permeability: Prototype<Permeability>,
-    pub(crate) description: Prototype<EntityDescription<'e>>,
-    pub(crate) composition: Prototype<T::Composite>,
-    pub(crate) contents: Prototype<Vec<Box<dyn EntityTrait<'e,'i, T>>>>
+    pub(crate) permeability: Option<Permeability>,
+    pub(crate) description: Option<EntityDescription>,
+    pub(crate) components: Option<HashMap<isize, EntityComponent>>,
+    pub(crate) contents: Option<Vec<Entity>>
 }
 
-impl<'e, 'i, T: EntityTemplateTrait<'e,'i>> EntityTrait<'e,'i, T> for Entity<'e,'i, T> {
+impl EntityTrait for Entity {
     fn id(&self) -> u64 {
         self.id
     }
 
-    fn template(&self) -> &Option<T> {
-        &self.template
+    fn permeability(&self) -> Option<&Permeability> {
+        self.permeability.as_ref()
     }
 
-    fn permeability(&self) -> &Prototype<Permeability> {
-        &self.permeability
+    fn description(&self) -> Option<&EntityDescription> {
+        self.description.as_ref()
     }
 
-    fn description(&self) -> &Prototype<EntityDescription> {
-        &self.description
+    fn components(&self) -> Option<&HashMap<isize, EntityComponent>> {
+        self.components.as_ref()
     }
 
-    fn composition(&self) -> &Prototype<T::Composite> {
-        &self.composition
+    fn component(&self, key: isize) -> Option<&EntityComponent> {
+        if let Some(components) = &self.components {
+            components.get(&key)
+        } else {
+            None
+        }
     }
 
-    fn contents(&self) -> &Prototype<Vec<Box<dyn EntityTrait<'e,'i, T>>>> {
-        &self.contents
+    fn contents(&self) -> Option<&Vec<Entity>> {
+        self.contents.as_ref()
     }
 }
 
-pub struct EntityDescription<'e> {
-    pub(crate) name: &'e str
+pub struct EntityDescription {
+    pub(crate) name: String
 }
 
-impl<'e> DescriptionTrait<'e> for EntityDescription<'e> {
-    fn name(&self) -> &'e str {
-        self.name
+impl DescriptionTrait for EntityDescription {
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
@@ -98,10 +103,35 @@ impl PermeabilityTrait for Permeability {
     }
 }
 
-pub trait EntityTemplateTrait<'e:'i,'i> {
-    type Composite: CompositionTrait<'e, 'i>;
-
-    fn component_model(&self) -> &Self::Composite;
-    //fn permeability(&self) -> &Permeability;
-    //fn description(&self) -> &EntityDescription;
+pub trait EntityComponentTrait {
+    fn entity(&self) -> Option<&Entity>;
+    fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
+    fn component(&self, key: isize) -> Option<&EntityComponent>;
 }
+
+pub struct EntityComponent {
+    pub(crate) entity: Option<Entity>
+}
+
+impl EntityComponentTrait for EntityComponent {
+    fn entity(&self) -> Option<&Entity> {
+        self.entity.as_ref()
+    }
+
+    fn components(&self) -> Option<&HashMap<isize, EntityComponent>> {
+        if let Some(entity) = self.entity.as_ref() {
+            entity.components()
+        } else {
+            None
+        }
+    }
+
+    fn component(&self, key: isize) -> Option<&EntityComponent> {
+        if let Some(components) = self.components() {
+            components.get(&key)
+        } else {
+            None
+        }
+    }
+}
+

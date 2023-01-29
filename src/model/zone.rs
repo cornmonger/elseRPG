@@ -1,49 +1,48 @@
 use super::DescriptionTrait;
 
-pub trait ZoneTrait<'z> {
+pub trait ZoneTrait {
     fn id(&self) -> u64;
-    fn description(&self) -> &ZoneDescription<'z>;
-    fn generate_id(&mut self) -> u64;
+    fn description(&self) -> Option<&ZoneDescription>;
 }
 
-pub struct Zone<'z> {
+pub struct Zone {
     id: u64,
-    description: ZoneDescription<'z>,
+    description: Option<ZoneDescription>,
     serial_id: u64,
 }
 
-impl<'z> ZoneTrait<'z> for Zone<'z> {
+impl ZoneTrait for Zone {
     fn id(&self) -> u64 {
         self.id
     }
 
-    fn description(&self) -> &ZoneDescription<'z> {
-        &self.description
-    }
-
-    fn generate_id(&mut self) -> u64 {
-        self.serial_id += 1;
-        self.serial_id
+    fn description(&self) -> Option<&ZoneDescription> {
+        self.description.as_ref()
     }
 }
 
-pub struct ZoneDescription<'z> {
-    name: &'z str
+pub struct ZoneDescription {
+    name: String
 }
 
-impl<'z> DescriptionTrait<'z> for ZoneDescription<'z> {
-    fn name(&self) -> &'z str {
-        self.name
+impl DescriptionTrait for ZoneDescription {
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
-impl<'a> Zone<'a> {
-    pub fn new() -> Zone<'a> {
+impl Zone {
+    pub fn new(id: u64) -> Zone {
         Zone {
-            id: 0,
-            description: ZoneDescription { name: "World" },
+            id,
+            description: Some(ZoneDescription { name: "World".to_owned() }),
             serial_id: 0
         }
+    }
+
+    pub fn generate_id(&mut self) -> u64 {
+        self.serial_id += 1;
+        self.serial_id
     }
 }
 

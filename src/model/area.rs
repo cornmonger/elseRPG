@@ -1,40 +1,40 @@
-use super::{DescriptionTrait, zone::{Zone, ZoneTrait}};
+use super::DescriptionTrait;
 
-pub trait AreaTrait<'a> {
+pub trait AreaTrait {
     fn id(&self) -> u64;
-    fn description(&self) -> &AreaDescription<'a>;
+    fn description(&self) -> Option<&AreaDescription>;
 }
 
-pub struct Area<'a> {
+pub struct Area {
     id: u64,
-    description: AreaDescription<'a>
+    description: Option<AreaDescription>
 }
 
-impl<'a> AreaTrait<'a> for Area<'a> {
+impl AreaTrait for Area {
     fn id(&self) -> u64 {
         self.id
     }
 
-    fn description(&self) -> &AreaDescription<'a> {
-        &self.description
+    fn description(&self) -> Option<&AreaDescription> {
+        self.description.as_ref()
     }
 }
 
-pub struct AreaDescription<'a> {
-    name: &'a str
+pub struct AreaDescription {
+    name: String
 }
 
-impl<'a> DescriptionTrait<'a> for AreaDescription<'a> {
-    fn name(&self) -> &'a str {
-        self.name
+impl DescriptionTrait for AreaDescription {
+    fn name(&self) -> &str {
+        self.name.as_str()
     }
 }
 
-impl<'a> Area<'a> {
-    pub fn new(zone: &mut Zone<'a>) -> Area<'a> {
+impl Area {
+    pub fn new(id: u64) -> Area {
         Area {
-            id: zone.generate_id(),
-            description: AreaDescription { name: "Lobby" }
+            id,
+            description: Some(AreaDescription { name: "Lobby".to_owned() })
         }
     }
 }
