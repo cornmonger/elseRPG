@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap};
 
 use super::{DescriptionTrait};
 
@@ -181,6 +181,7 @@ impl EntityComponentTrait for EntityComponent {
 
 pub trait EntityCompositionTrait {
     fn get(&self, key: isize) -> Result<&EntityComponent, ()>;
+    fn iter(&self) -> std::vec::IntoIter<&EntityComponent>;
 }
 
 pub struct UnrestrainedEntityComposition {
@@ -194,6 +195,11 @@ impl EntityCompositionTrait for UnrestrainedEntityComposition {
         } else {
             Err(())
         }
+    }
+
+    fn iter(&self) -> std::vec::IntoIter<&EntityComponent> {
+        let vec: Vec<&EntityComponent> = self.map.values().collect();
+        vec.into_iter()
     }
 }
 

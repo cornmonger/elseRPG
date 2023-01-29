@@ -45,6 +45,10 @@ impl EntityCompositionTrait for HumanoidComposition {
             _ => Err(())
         }
     }
+
+    fn iter(&self) -> std::vec::IntoIter<&EntityComponent> {
+        vec![&self.head, &self.back].into_iter()
+    }
 }
     
 impl HumanoidComposition {

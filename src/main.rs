@@ -38,10 +38,11 @@ fn test_backpack(entity: &Entity) {
 }
 
 fn test_composition(entity: &Entity) {
-    // manual composition
-    let components = entity.components().unwrap();
-    println!("You are composed of: {}, {}",
-        components.get(HumanoidPart::Head as isize).unwrap().entity().unwrap().description().unwrap().name(),
-        components.get(HumanoidPart::Back as isize).unwrap().entity().unwrap().description().unwrap().name() );
+    let mut names = Vec::<&str>::new();
 
+    entity.components().unwrap().iter().for_each(|component| {
+        names.push(component.entity().unwrap().description().unwrap().name());
+    });
+
+    println!("You are composed of: {}.", names.join(", "));
 }
