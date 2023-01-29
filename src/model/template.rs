@@ -38,19 +38,45 @@ impl Humanoid {
             id: zone.generate_id(),
             description: Some(EntityDescription { name: "Backpack".to_owned() }),
             permeability: None, 
-            contents: Some(Vec::new()),
-            components: None
+            components: None,
+            attachments: None,
+            contents: Some(vec![Self::new_apple(zone)]),
         }
     }
 
+    pub fn new_apple(zone: &mut Zone) -> Entity {
+        Entity {
+            id: zone.generate_id(),
+            description: Some(EntityDescription { name: "Apple".to_owned() }),
+            permeability: None, 
+            components: None,
+            attachments: None,
+            contents: None,
+        }
+    }
+
+
+
     fn new_composition(zone: &mut Zone) -> HashMap<isize, EntityComponent> {
         let mut map = HashMap::<isize, EntityComponent>::new();
-        map.insert(HumanoidPart::Back as isize, EntityComponent { entity: Some( Entity {
+        map.insert(HumanoidPart::Head as isize, EntityComponent { key: HumanoidPart::Head as isize, entity: Some( Entity {
             id: zone.generate_id(),
-            description: Some(EntityDescription { name: "Klondike Backpack".to_owned() }),
+            description: Some(EntityDescription { name: "Head".to_owned() }),
             permeability: None,
+            components: None,
+            attachments: None,
             contents: None,
-            components: None
+        })});
+
+        map.insert(HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
+            id: zone.generate_id(),
+            description: Some(EntityDescription { name: "Back".to_owned() }),
+            permeability: None,
+            components: None,
+            attachments: Some([
+                (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Self::new_backpack(zone)) })
+            ].into_iter().collect()),
+            contents: None,
         })});
 
         map
@@ -72,8 +98,9 @@ impl Humanoid {
                         resist: 100,
                         ability: 100
                     }),
-                    contents: None,
                     components: Some(Self::new_composition(zone)),
+                    attachments: None,
+                    contents: None,
                 }
             }
         }

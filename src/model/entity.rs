@@ -8,6 +8,8 @@ pub trait EntityTrait {
     fn description(&self) -> Option<&EntityDescription>;
     fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
     fn component(&self, key: isize) -> Option<&EntityComponent>;
+    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>>;
+    fn attachment(&self, key: isize) -> Option<&EntityComponent>;
     fn contents(&self) -> Option<&Vec<Entity>>;
 }
 
@@ -16,7 +18,8 @@ pub struct Entity {
     pub(crate) permeability: Option<Permeability>,
     pub(crate) description: Option<EntityDescription>,
     pub(crate) components: Option<HashMap<isize, EntityComponent>>,
-    pub(crate) contents: Option<Vec<Entity>>
+    pub(crate) attachments: Option<HashMap<isize, EntityComponent>>,
+    pub(crate) contents: Option<Vec<Entity>>,
 }
 
 impl EntityTrait for Entity {
@@ -39,6 +42,18 @@ impl EntityTrait for Entity {
     fn component(&self, key: isize) -> Option<&EntityComponent> {
         if let Some(components) = &self.components {
             components.get(&key)
+        } else {
+            None
+        }
+    }
+
+    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>> {
+        self.attachments.as_ref()
+    }
+
+    fn attachment(&self, key: isize) -> Option<&EntityComponent> {
+        if let Some(attachments) = &self.attachments {
+            attachments.get(&key)
         } else {
             None
         }
@@ -107,9 +122,13 @@ pub trait EntityComponentTrait {
     fn entity(&self) -> Option<&Entity>;
     fn components(&self) -> Option<&HashMap<isize, EntityComponent>>;
     fn component(&self, key: isize) -> Option<&EntityComponent>;
-}
+    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>>;
+    fn attachment(&self, key: isize) -> Option<&EntityComponent>;
+    fn contents(&self) -> Option<&Vec<Entity>>;
+ }
 
 pub struct EntityComponent {
+    pub(crate) key: isize,
     pub(crate) entity: Option<Entity>
 }
 
@@ -129,6 +148,30 @@ impl EntityComponentTrait for EntityComponent {
     fn component(&self, key: isize) -> Option<&EntityComponent> {
         if let Some(components) = self.components() {
             components.get(&key)
+        } else {
+            None
+        }
+    }
+
+    fn attachments(&self) -> Option<&HashMap<isize, EntityComponent>> {
+        if let Some(entity) = self.entity.as_ref() {
+            entity.attachments()
+        } else {
+            None
+        }
+    }
+
+    fn attachment(&self, key: isize) -> Option<&EntityComponent> {
+        if let Some(attachments) = self.attachments() {
+            attachments.get(&key)
+        } else {
+            None
+        }
+    }
+
+    fn contents(&self) -> Option<&Vec<Entity>> {
+        if let Some(entity) = self.entity() {
+            entity.contents()
         } else {
             None
         }

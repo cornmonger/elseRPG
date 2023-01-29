@@ -14,7 +14,19 @@ fn main() {
 }
 
 fn test_backpack(entity: &Entity) {
-    println!("You are wearing a {} on your {}.",
-        entity.component(HumanoidPart::Back as isize).unwrap().entity().unwrap().description().unwrap().name(),
-        HumanoidPart::Back.name() );
+    println!("You have a {} inside of the {} on your {}.",
+        entity
+            .component(HumanoidPart::Back as isize).unwrap()
+            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .contents().unwrap()
+            .get(0).unwrap()
+            .description().unwrap().name(),
+        entity
+            .component(HumanoidPart::Back as isize).unwrap()
+            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .description().unwrap().name(),
+        entity
+            .component(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .description().unwrap().name(),
+    );
 }
