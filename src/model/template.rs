@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub use super::entity::Entity;
-use super::entity::{EntityComponent, EntityCompositionTrait};
+use super::entity::{EntityComponent, EntityCompositionTrait, UnrestrainedEntityComposition};
 pub use super::entity::{EntityTrait, Permeability, EntityDescription};
 use super::{zone::{Zone}, character::{Player, Character}};
 use strum::{EnumIter};
@@ -64,9 +64,9 @@ impl HumanoidComposition {
                 description: Some(EntityDescription { name: "Back".to_owned() }),
                 permeability: None,
                 components: None,
-                attachments: Some([
+                attachments: Some(Box::new(UnrestrainedEntityComposition::new([
                     (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Humanoid::new_backpack(zone)) })
-                ].into_iter().collect()),
+                ].into_iter().collect()))),
                 contents: None,
                 componentz: None,
             })}
@@ -123,9 +123,9 @@ impl Humanoid {
             description: Some(EntityDescription { name: "Back".to_owned() }),
             permeability: None,
             components: None,
-            attachments: Some([
+            attachments: Some(Box::new(UnrestrainedEntityComposition::new([
                 (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Self::new_backpack(zone)) })
-            ].into_iter().collect()),
+            ].into_iter().collect()))),
             contents: None,
             componentz: None,
         })});
