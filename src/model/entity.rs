@@ -196,3 +196,27 @@ impl EntityComponentTrait for EntityComponent {
 pub trait EntityCompositionTrait {
     fn get(&self, key: isize) -> Result<&EntityComponent, ()>;
 }
+
+pub struct UnrestrainedEntityComposition {
+    map: HashMap<isize, EntityComponent>
+}
+
+impl EntityCompositionTrait for UnrestrainedEntityComposition {
+    fn get(&self, key: isize) -> Result<&EntityComponent, ()> {
+        if let Some(value) = self.map.get(&key) {
+            Ok(value)
+        } else {
+            Err(())
+        }
+    }
+}
+
+impl UnrestrainedEntityComposition {
+    pub fn new(map: HashMap<isize, EntityComponent>) -> Self {
+        Self { map }
+    }
+
+    pub fn empty() -> Self {
+        Self { map: HashMap::new() }
+    }
+}
