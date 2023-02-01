@@ -18,6 +18,7 @@ fn main() {
 
     test_composition(player.character().entity());
     test_backpack(player.character().entity());
+    //test_backpack_parent(player.character().entity());
 }
 
 fn test_backpack(entity: &Entity) {
@@ -45,4 +46,18 @@ fn test_composition(entity: &Entity) {
     });
 
     println!("You are composed of: {}.", names.join(", "));
+}
+
+
+fn test_backpack_parent(entity: &Entity) {
+    let backpack_component= entity.component(HumanoidPart::Back as isize).unwrap()
+        .attachment(HumanoidPart::Back as isize).unwrap();
+    
+    let original_entity = backpack_component.parent().unwrap()
+        .parent().unwrap().entity().unwrap();
+
+    println!("The {}'s owner is {}.",
+        backpack_component.entity().unwrap().description().unwrap().name(),
+        original_entity.description().unwrap().name()
+    );
 }

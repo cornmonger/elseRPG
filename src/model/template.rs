@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 pub use super::entity::Entity;
-use super::entity::{EntityComponent, EntityCompositionTrait, UnrestrainedEntityComposition};
+use super::entity::{EntityComponent, EntityCompositionTrait, UnrestrainedEntityComposition, EntityBuilder};
 pub use super::entity::{EntityTrait, Permeability, EntityDescription};
 use super::{zone::{Zone}, character::{Player, Character}};
 
@@ -79,24 +79,17 @@ impl EntityCompositionTrait for HumanoidComposition {
 impl HumanoidComposition {
     pub fn new(zone: &mut Zone) -> HumanoidComposition {
         HumanoidComposition {
-            head: EntityComponent { key: HumanoidPart::Head as isize, entity: Some( Entity {
-                id: zone.generate_id(),
-                description: Some(EntityDescription { name: "Head".to_owned() }),
-                permeability: None,
-                components: None,
-                attachments: None,
-                contents: None,
-            })},
-            back: EntityComponent { key: HumanoidPart::Back as isize, entity: Some( Entity {
-                id: zone.generate_id(),
-                description: Some(EntityDescription { name: "Back".to_owned() }),
-                permeability: None,
-                components: None,
-                attachments: Some(Box::new(UnrestrainedEntityComposition::new([
-                    (HumanoidPart::Back as isize, EntityComponent { key: HumanoidPart::Back as isize, entity: Some(Humanoid::new_backpack(zone)) })
-                ].into_iter().collect()))),
-                contents: None,
-            })}
+            head: EntityComponent::new(HumanoidPart::Head as isize, None, Some(
+                EntityBuilder::new().id_zone(zone).description_name("Head").create()
+            )),
+            back: EntityComponent::new(HumanoidPart::Back as isize, None, Some(
+                EntityBuilder::new().id_zone(zone).description_name("Back")
+                    .attachments(Box::new(UnrestrainedEntityComposition::new([
+                        ( HumanoidPart::Back as isize, EntityComponent::new(HumanoidPart::Back as isize, None, Some(
+                            Humanoid::new_backpack(zone)) )) 
+                    ].into_iter().collect())))
+                    .create()
+            ))
         }
     }
 
@@ -110,49 +103,21 @@ impl HumanoidComposition {
 
 impl Humanoid {
     pub fn new_backpack(zone: &mut Zone) -> Entity {
-        Entity {
-            id: zone.generate_id(),
-            description: Some(EntityDescription { name: "Backpack".to_owned() }),
-            permeability: None, 
-            components: None,
-            attachments: None,
-            contents: Some(vec![Self::new_apple(zone)]),
-        }
+        EntityBuilder::new().id_zone(zone).description_name("Backpack")
+            .contents(vec![Self::new_apple(zone)])
+            .create()
     }
 
     pub fn new_apple(zone: &mut Zone) -> Entity {
-        Entity {
-            id: zone.generate_id(),
-            description: Some(EntityDescription { name: "Apple".to_owned() }),
-            permeability: None, 
-            components: None,
-            attachments: None,
-            contents: None,
-        }
+        EntityBuilder::new().id_zone(zone).description_name("Apple").create()
     }
 
     pub fn new_player(zone: &mut Zone) -> Player {
-        Player {
-            character: Character {
-                entity: Entity {
-                    id: zone.generate_id(),
-                    description: Some(EntityDescription {
-                        name: "Player".to_owned()
-                    }),
-                    permeability: Some(Permeability {
-                        max_health: 100,
-                        max_resist: 100,
-                        max_ability: 100,
-                        health: 100,
-                        resist: 100,
-                        ability: 100
-                    }),
-                    components: Some(Box::new(HumanoidComposition::new(zone))),
-                    attachments: None,
-                    contents: None,
-                }
-            }
-        }
+        Player::new(EntityBuilder::new().id_zone(zone).description_name("Player")
+            .permeability_max(100, 100, 100)
+            .components(Box::new(HumanoidComposition::new(zone)))
+            .create()
+        )
     }
 }
 

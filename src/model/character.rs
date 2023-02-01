@@ -15,6 +15,14 @@ pub struct Player {
 }
 
 impl Player {
+    pub fn new (entity: Entity) -> Self {
+        Player {
+            character: Character {
+                entity
+            }
+        }
+    }
+
     pub fn character(&self) -> &Character {
         &self.character
     }
