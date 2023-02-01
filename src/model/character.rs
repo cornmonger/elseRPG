@@ -1,11 +1,11 @@
-use super::{entity::{Entity}};
+use super::entity::EntityRef;
 
 pub struct Character {
-    pub(crate) entity: Entity,
+    pub(crate) entity: EntityRef,
 }
 
 impl Character {
-    pub fn entity(&self) -> &Entity {
+    pub fn entity(&self) -> &EntityRef {
         &self.entity
     }
 }
@@ -15,7 +15,7 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new (entity: Entity) -> Self {
+    pub fn new (entity: EntityRef) -> Self {
         Player {
             character: Character {
                 entity

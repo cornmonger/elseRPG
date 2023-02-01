@@ -1,9 +1,9 @@
 use elserpg::model::{
     zone::{Zone, ZoneTrait},
     area::{Area, AreaTrait},
-    template::{Humanoid, EntityTrait, Entity, HumanoidPart},
+    humanoid::{Humanoid, HumanoidPart},
     DescriptionTrait,
-    entity::EntityComponentTrait};
+    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait}};
 
 fn main() {
     let mut zone = Zone::new(1);
@@ -12,52 +12,136 @@ fn main() {
 
     println!("Welcome to {}, {}.",
         zone.description().unwrap().name(),
-        player.character().entity().description().unwrap().name());
+        player.character().entity().borrow().description().unwrap().name());
 
     println!("You arrive in {}.", lobby.description().unwrap().name());
 
-    test_composition(player.character().entity());
-    test_backpack(player.character().entity());
-    //test_backpack_parent(player.character().entity());
+    test_rename(&mut player.character().entity().borrow_mut(), "Link".to_string(), true);
+    test_composition(&player.character().entity().borrow());
+    test_backpack(&player.character().entity().borrow());
+    test_backpack_parent(&player.character().entity().borrow());
+    test_hurt(&mut player.character().entity().borrow_mut());
+    test_add_to_backpack(&mut player.character().entity().borrow_mut(), &mut zone);
+    test_backpack(&player.character().entity().borrow());
+
+    let nemesis = Humanoid::new_player(&mut zone);
+    test_rename(&mut nemesis.character().entity().borrow_mut(), "Ganondorf".to_string(), false);
+    println!("{} has arrived in {}!", nemesis.character().entity().borrow().description().unwrap().name(), lobby.description().unwrap().name());
+
+    test_backpack(&nemesis.character().entity().borrow());
+    let flute = test_remove_from_backpack(&mut player.character().entity().borrow_mut());
+    println!("{} stole a {} from {}!",
+        nemesis.character().entity().borrow().description().unwrap().name(),
+        flute.borrow().description().unwrap().name(),
+        player.character().entity().borrow().description().unwrap().name());
+
+    test_move_to_backpack(&mut nemesis.character().entity().borrow_mut(), flute);
+
+    test_backpack(&player.character().entity().borrow());
+    test_backpack(&nemesis.character().entity().borrow());
 }
 
 fn test_backpack(entity: &Entity) {
-    println!("You have a {} inside of the {} on your {}.",
+    println!("{} has the following inside of the {} on their {}:",
+        entity.description().unwrap().name(),
         entity
-            .component(HumanoidPart::Back as isize).unwrap()
-            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
-            .contents().unwrap()
-            .get(0).unwrap()
+            .components().unwrap().borrow().relation(HumanoidPart::Back as isize).unwrap().borrow().entity().unwrap().borrow()
+            .attachment_entity(HumanoidPart::Back as isize).unwrap().borrow()
             .description().unwrap().name(),
         entity
-            .component(HumanoidPart::Back as isize).unwrap()
-            .attachment(HumanoidPart::Back as isize).unwrap().entity().unwrap()
-            .description().unwrap().name(),
-        entity
-            .component(HumanoidPart::Back as isize).unwrap().entity().unwrap()
+            .components().unwrap().borrow().relation(HumanoidPart::Back as isize).unwrap().borrow().entity().unwrap().borrow()
             .description().unwrap().name() );
+
+    let backpack = entity
+        .components().unwrap().borrow().relation(HumanoidPart::Back as isize).unwrap().borrow().entity().unwrap().borrow()
+        .attachments().unwrap().borrow().relation(HumanoidPart::Back as isize).unwrap().borrow().entity().unwrap().clone();
+    
+    for ent in backpack.borrow().contents().unwrap() {
+        println!("  - {}", ent.borrow().description().unwrap().name());
+    }
+
 }
 
 fn test_composition(entity: &Entity) {
-    let mut names = Vec::<&str>::new();
+    let mut names = Vec::<String>::new();
 
-    entity.components().unwrap().iter().for_each(|component| {
-        names.push(component.entity().unwrap().description().unwrap().name());
-    });
+    for c in entity.components().unwrap().borrow().iter() {
+        let name = String::from(c.borrow().entity().unwrap().borrow().description().unwrap().name());
+        names.push(name);
+    }
 
-    println!("You are composed of: {}.", names.join(", "));
+    println!("{} is composed of: {}.", entity.description().unwrap().name(), names.join(", "));
 }
-
 
 fn test_backpack_parent(entity: &Entity) {
-    let backpack_component= entity.component(HumanoidPart::Back as isize).unwrap()
-        .attachment(HumanoidPart::Back as isize).unwrap();
+    let back_strapto_rel = entity
+        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
+        .attachment(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
     
-    let original_entity = backpack_component.parent().unwrap()
-        .parent().unwrap().entity().unwrap();
-
     println!("The {}'s owner is {}.",
-        backpack_component.entity().unwrap().description().unwrap().name(),
-        original_entity.description().unwrap().name()
+        back_strapto_rel.borrow().entity().unwrap().borrow() // backpack entity
+            .description().unwrap().name(),
+        back_strapto_rel.borrow().parent().borrow() // attachment composition for back
+            .entity().borrow() // back entity
+            .parent().unwrap().borrow() // back relation from back entity
+            .parent().borrow() // human composition
+            .entity().borrow() // the og entity
+            .description().unwrap().name()
     );
 }
+
+fn test_hurt(entity: &mut Entity) {
+    let health = entity.permeability().unwrap().health();
+    entity.permeability_mut().unwrap().set_health(health - 10);
+
+    println!("{}'s health before falling: {}. After falling: {}",
+        entity.description().unwrap().name(),
+        health,
+        entity.permeability().unwrap().health() );
+}
+
+fn test_add_to_backpack(entity: &mut Entity, zone: &mut Zone) {
+    let backpack = entity
+        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
+        .attachment_entity(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+
+    let flute = Humanoid::new_flute(zone);
+    backpack.borrow_mut().contents_mut().unwrap().push(flute.clone());
+    println!("A {} was placed in your {}.",
+        flute.borrow().description().unwrap().name(),
+        backpack.borrow().description().unwrap().name()
+    );
+}
+
+fn test_rename(entity: &mut Entity, name: String, announce: bool) {
+    let old_name = String::from(entity.description().unwrap().name());
+    entity.description_mut().unwrap().rename(name);
+
+    if announce {
+        println!("{} was renamed to {}.", old_name, entity.description().unwrap().name());
+    }
+}
+
+fn test_remove_from_backpack(entity: &mut Entity) -> EntityRef {
+    let backpack = entity
+        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
+        .attachment_entity(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+
+    let flute = backpack.borrow_mut().contents_mut().unwrap().pop().unwrap();
+    println!("A {} was removed from {}'s {}.",
+        flute.borrow().description().unwrap().name(),
+        entity.description().unwrap().name(),
+        backpack.borrow().description().unwrap().name()
+    );
+
+    flute
+}
+
+fn test_move_to_backpack(entity: &mut Entity, item: EntityRef) {
+    let backpack = entity
+        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
+        .attachment_entity(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+
+    backpack.borrow_mut().contents_mut().unwrap().push(item);
+}
+

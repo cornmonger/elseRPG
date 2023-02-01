@@ -29,6 +29,10 @@ impl DescriptionTrait for ZoneDescription {
     fn name(&self) -> &str {
         self.name.as_str()
     }
+
+    fn rename(&mut self, name: String) {
+        self.name = name;
+    }
 }
 
 impl Zone {

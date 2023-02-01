@@ -1,25 +1,39 @@
-use std::{collections::{HashMap}, rc::Rc, borrow::Borrow};
+use std::{collections::{HashMap}, rc::{Rc, Weak}, cell::{RefCell}};
 
 use super::{DescriptionTrait, zone::Zone};
+
+pub type RelationRef = Rc<RefCell<Relation>>;
+pub type WeakRelationRef = Weak<RefCell<Relation>>;
+pub type RelationMapRef = Rc<RefCell<Box<dyn RelationMapTrait>>>;
+pub type WeakRelationMapRef = Weak<RefCell<Box<dyn RelationMapTrait>>>;
+pub type EntityRef = Rc<RefCell<Entity>>;
+pub type WeakEntityRef = Weak<RefCell<Entity>>;
 
 pub trait EntityTrait {
     fn id(&self) -> u64;
     fn permeability(&self) -> Option<&Permeability>;
+    fn permeability_mut(&mut self) -> Option<&mut Permeability>;
     fn description(&self) -> Option<&EntityDescription>;
-    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
-    fn component(&self, key: isize) -> Result<&EntityComponent, ()>;
-    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
-    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()>;
-    fn contents(&self) -> Option<&Vec<Entity>>;
+    fn description_mut(&mut self) -> Option<&mut EntityDescription>;
+    fn components(&self) -> Option<&RelationMapRef>;
+    fn component(&self, key: isize) -> Result<RelationRef, ()>;
+    fn component_entity(&self, key: isize) -> Result<EntityRef, ()>;
+    fn attachments(&self) -> Option<&RelationMapRef>;
+    fn attachment(&self, key: isize) -> Result<RelationRef, ()>;
+    fn attachment_entity(&self, key: isize) -> Result<EntityRef, ()>;
+    fn contents(&self) -> Option<&Vec<EntityRef>>;
+    fn contents_mut(&mut self) -> Option<&mut Vec<EntityRef>>;
+    fn parent(&self) -> Option<RelationRef>;
 }
 
 pub struct Entity {
     pub(crate) id: u64,
     pub(crate) permeability: Option<Permeability>,
     pub(crate) description: Option<EntityDescription>,
-    pub(crate) components: Option<Box<dyn EntityCompositionTrait>>,
-    pub(crate) attachments: Option<Box<dyn EntityCompositionTrait>>,
-    pub(crate) contents: Option<Vec<Entity>>,
+    pub(crate) components: Option<RelationMapRef>,
+    pub(crate) attachments: Option<RelationMapRef>,
+    pub(crate) contents: Option<Vec<EntityRef>>,
+    pub(crate) parent: Option<WeakRelationRef>
 }
 
 impl EntityTrait for Entity {
@@ -31,36 +45,67 @@ impl EntityTrait for Entity {
         self.permeability.as_ref()
     }
 
+    fn permeability_mut(&mut self) -> Option<&mut Permeability> {
+        self.permeability.as_mut()
+    }
+
     fn description(&self) -> Option<&EntityDescription> {
         self.description.as_ref()
     }
 
-    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
+    fn description_mut(&mut self) -> Option<&mut EntityDescription> {
+        self.description.as_mut()
+    }
+
+    fn components(&self) -> Option<&RelationMapRef> {
         self.components.as_ref()
     }
 
-    fn component(&self, key: isize) -> Result<&EntityComponent, ()> {
-        if let Some(components) = &self.components {
-            components.get(key)
-        } else {
-            Err(())
+    fn component(&self, key: isize) -> Result<RelationRef, ()> {
+        match self.components {
+            Some(ref components) => components.borrow().relation_ref(key),
+            None => Err(())
         }
     }
 
-    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
+    fn attachments(&self) -> Option<&RelationMapRef> {
         self.attachments.as_ref()
     }
 
-    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()> {
-        if let Some(attachments) = &self.attachments {
-            attachments.get(key)
-        } else {
-            Err(())
+    fn attachment(&self, key: isize) -> Result<RelationRef, ()> {
+        match self.attachments {
+            Some(ref attachments) => attachments.borrow().relation_ref(key),
+            None => Err(())
         }
     }
 
-    fn contents(&self) -> Option<&Vec<Entity>> {
+    fn contents(&self) -> Option<&Vec<EntityRef>> {
         self.contents.as_ref()
+    }
+
+    fn contents_mut(&mut self) -> Option<&mut Vec<EntityRef>> {
+        self.contents.as_mut()
+    }
+
+    fn component_entity(&self, key: isize) -> Result<EntityRef, ()> {
+        match self.component(key) {
+            Ok(ref component) => Ok(component.borrow().entity().unwrap().clone()),
+            Err(_)=> Err(())
+        }
+    }
+
+    fn attachment_entity(&self, key: isize) -> Result<EntityRef, ()> {
+        match self.attachment(key) {
+            Ok(ref attachment) => Ok(attachment.borrow().entity().unwrap().clone()),
+            Err(_)=> Err(())
+        }
+    }
+
+    fn parent(&self) -> Option<RelationRef> {
+        match self.parent {
+            Some(ref parent) => parent.upgrade(),
+            None => None
+        }
     }
 
 }
@@ -73,15 +118,19 @@ impl DescriptionTrait for EntityDescription {
     fn name(&self) -> &str {
         self.name.as_str()
     }
+
+    fn rename(&mut self, name: String) {
+        self.name = name;
+    }
 }
 
 pub struct EntityBuilder {
     id: u64,
     permeability: Option<Permeability>,
     description: Option<EntityDescription>,
-    components: Option<Box<dyn EntityCompositionTrait>>,
-    attachments: Option<Box<dyn EntityCompositionTrait>>,
-    contents: Option<Vec<Entity>>,
+    components: Option<RelationMapRef>,
+    attachments: Option<RelationMapRef>,
+    contents: Option<Vec<EntityRef>>,
 }
 
 impl EntityBuilder {
@@ -96,15 +145,30 @@ impl EntityBuilder {
         }
     }
 
-    pub fn create(mut self) -> Entity {
-        Entity {
+    pub fn create(self) -> EntityRef {
+        let entity = Rc::new(RefCell::new(Entity {
             id: self.id,
             permeability: self.permeability,
             description: self.description,
             components: self.components,
             attachments: self.attachments,
-            contents: self.contents
+            contents: self.contents,
+            parent: None
+        }));
+
+        let weak_entity = Rc::downgrade(&entity);
+
+        if let Some(components) = &mut entity.borrow_mut().components {
+            let weak_composition = Rc::downgrade(&components);
+            components.borrow_mut().bind(weak_entity.clone(), weak_composition.clone());
         }
+
+        if let Some(attachments) = &mut entity.borrow_mut().attachments{
+            let weak_attachments = Rc::downgrade(&attachments);
+            attachments.borrow_mut().bind(weak_entity.clone(), weak_attachments.clone());
+        }
+
+        entity 
     }
 
     pub fn id(mut self, id: u64) -> Self {
@@ -122,17 +186,17 @@ impl EntityBuilder {
         self
     }
 
-    pub fn components(mut self, components: Box<dyn EntityCompositionTrait>) -> Self {
+    pub fn components(mut self, components: RelationMapRef) -> Self {
         self.components = Some(components);
         self
     }
 
-    pub fn attachments(mut self, attachments: Box<dyn EntityCompositionTrait>) -> Self {
+    pub fn attachments(mut self, attachments: RelationMapRef) -> Self {
         self.attachments = Some(attachments);
         self
     }
 
-    pub fn contents(mut self, contents: Vec<Entity>) -> Self {
+    pub fn contents(mut self, contents: Vec<EntityRef>) -> Self {
         self.contents = Some(contents);
         self
     }
@@ -161,6 +225,7 @@ pub trait PermeabilityTrait {
     fn health(&self) -> u16;
     fn resist(&self) -> u16;
     fn ability(&self) -> u16;
+    fn set_health(&mut self, health: u16);
 }
 
 pub struct Permeability {
@@ -196,95 +261,93 @@ impl PermeabilityTrait for Permeability {
     fn ability(&self) -> u16 {
         self.ability
     }
+
+    fn set_health(&mut self, health: u16) {
+        self.health = health;
+    }
 }
 
-pub trait EntityComponentTrait {
-    fn parent(&self) -> Option<&EntityComponent>;
-    fn entity(&self) -> Option<&Entity>;
-    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
-    fn component(&self, key: isize) -> Result<&EntityComponent, ()>;
-    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>>;
-    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()>;
-    fn contents(&self) -> Option<&Vec<Entity>>;
+pub trait RelationTrait {
+    fn parent(&self) -> RelationMapRef;
+    fn entity(&self) -> Option<&EntityRef>;
+    fn bind(&mut self, parent: WeakRelationMapRef);
  }
 
-pub struct EntityComponent {
+pub struct Relation {
     pub(crate) key: isize,
-    pub(crate) parent: Option<Rc<EntityComponent>>,
-    pub(crate) entity: Option<Entity>
+    pub(crate) parent: Option<WeakRelationMapRef>,
+    pub(crate) entity: Option<EntityRef>,
 }
 
-impl EntityComponentTrait for EntityComponent {
-    fn parent(&self) -> Option<&EntityComponent> {
-        if let Some(parent) = self.parent.as_ref() {
-            Some(parent.borrow())
-        } else {
-            None
+impl RelationTrait for Relation {
+    fn parent(&self) -> RelationMapRef {
+        match self.parent {
+            Some(ref parent) => parent.upgrade().unwrap(),
+            None => panic!("Relation parent doesn't exist!")
         }
     }
 
-    fn entity(&self) -> Option<&Entity> {
+    fn entity(&self) -> Option<&EntityRef> {
         self.entity.as_ref()
     }
 
-    fn components(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
-        if let Some(entity) = self.entity.as_ref() {
-            entity.components()
-        } else {
-            None
-        }
-    }
-
-    fn component(&self, key: isize) -> Result<&EntityComponent, ()> {
-        if let Some(components) = self.components() {
-            components.get(key)
-        } else {
-            Err(())
-        }
-    }
-
-    fn attachments(&self) -> Option<&Box<dyn EntityCompositionTrait>> {
-        if let Some(entity) = self.entity.as_ref() {
-            entity.attachments()
-        } else {
-            None
-        }
-    }
-
-    fn attachment(&self, key: isize) -> Result<&EntityComponent, ()> {
-        if let Some(attachments) = self.attachments() {
-            attachments.get(key)
-        } else {
-            Err(())
-        }
-    }
-
-    fn contents(&self) -> Option<&Vec<Entity>> {
-        if let Some(entity) = self.entity() {
-            entity.contents()
-        } else {
-            None
-        }
+    fn bind(&mut self, parent: WeakRelationMapRef) {
+        self.parent = Some(parent);
     }
 }
 
-impl EntityComponent {
-    pub fn new(key: isize, parent: Option<Rc<EntityComponent>>, entity: Option<Entity>) -> Self {
-        EntityComponent { key, parent, entity }
+impl Relation {
+    pub fn new(key: isize, entity: Option<EntityRef>) -> RelationRef {
+        let relation = Rc::new(RefCell::new(Relation { key, parent: None, entity }));
+        
+        let weak_relation = Rc::downgrade(&relation);
+
+        if let Some(entity) = &relation.borrow_mut().entity {
+            entity.borrow_mut().parent = Some(weak_relation);
+        }
+
+        relation
+    }
+
+    pub fn entity(&self) -> Option<&EntityRef> {
+        self.entity.as_ref()
     }
 }
 
-pub trait EntityCompositionTrait {
-    fn get(&self, key: isize) -> Result<&EntityComponent, ()>;
-    fn iter(&self) -> std::vec::IntoIter<&EntityComponent>;
+pub trait RelationMapTrait {
+    fn bind(&mut self, entity: WeakEntityRef, weak_self: WeakRelationMapRef);
+    fn entity(&self) -> EntityRef;
+    fn relation(&self, key: isize) -> Result<&RelationRef, ()>;
+    fn relation_ref(&self, key: isize) -> Result<RelationRef, ()>;
+    fn iter(&self) -> std::vec::IntoIter<RelationRef>;
 }
 
-pub struct UnrestrainedEntityComposition {
-    map: HashMap<isize, EntityComponent>
+pub struct RelationHashMap {
+    entity: Option<WeakEntityRef>,
+    map: HashMap<isize, RelationRef>
 }
 
-impl EntityCompositionTrait for UnrestrainedEntityComposition {
-    fn get(&self, key: isize) -> Result<&EntityComponent, ()> {
+impl RelationMapTrait for RelationHashMap {
+    fn iter(&self) -> std::vec::IntoIter<RelationRef> {
+        self.map.values().cloned().collect::<Vec<RelationRef>>().into_iter()
+    }
+
+    fn bind(&mut self, entity: WeakEntityRef, weak_self: WeakRelationMapRef) {
+        self.entity = Some(entity);
+
+        for r in self.map.iter_mut() {
+            r.1.borrow_mut().bind(weak_self.clone());
+        }
+    }
+
+    fn entity(&self) -> EntityRef {
+        match self.entity {
+            Some(ref entity) => entity.upgrade().unwrap(),
+            None => panic!("Called entity before bind()!")
+        }
+    }
+
+    fn relation(&self, key: isize) -> Result<&RelationRef, ()> {
         if let Some(value) = self.map.get(&key) {
             Ok(value)
         } else {
@@ -292,18 +355,17 @@ impl EntityCompositionTrait for UnrestrainedEntityComposition {
         }
     }
 
-    fn iter(&self) -> std::vec::IntoIter<&EntityComponent> {
-        let vec: Vec<&EntityComponent> = self.map.values().collect();
-        vec.into_iter()
+    fn relation_ref(&self, key: isize) -> Result<RelationRef, ()> {
+        if let Some(value) = self.map.get(&key) {
+            Ok(value.clone())
+        } else {
+            Err(())
+        }
     }
 }
 
-impl UnrestrainedEntityComposition {
-    pub fn new(map: HashMap<isize, EntityComponent>) -> Self {
-        Self { map }
-    }
-
-    pub fn empty() -> Self {
-        Self { map: HashMap::new() }
+impl RelationHashMap {
+    pub fn new(map: HashMap<isize, RelationRef>) -> Self {
+        Self { entity: None, map }
     }
 }
