@@ -1,6 +1,7 @@
+use std::any::Any;
 use std::{rc::Rc, cell::RefCell};
 
-use super::entity::{EntityRef, RelationRef, Relation, RelationMapTrait, RelationHashMap, EntityBuilder, WeakEntityRef, WeakRelationMapRef, RelationTrait};
+use super::entity::{EntityRef, RelationRef, Relation, RelationMapTrait, RelationHashMap, EntityBuilder, WeakEntityRef, WeakRelationMapRef, RelationTrait, RelationMapRef, Entity, EntityTrait};
 use super::{zone::{Zone}, character::{Player}};
 
 pub struct Humanoid {
@@ -13,31 +14,59 @@ pub enum HumanoidPart {
 }
 
 pub mod humanoid {
+    use crate::model::entity::{RelationTemplate, CompositionTemplateTrait};
+
     pub enum Component {
-        Head = 1,
+        Head = 1,  // humanoid//Component::Head
         Torso = 2,
-        Waist = 3,
+        Arms = 3,
         Legs = 4,
     }
+
+    pub struct Composition {
+        pub head: RelationTemplate,
+        pub torso: RelationTemplate,
+    }
+
+    impl CompositionTemplateTrait for Composition {
+        type Relationship = Component;
+        const NAMESPACE: &'static str = "humanoid//Component";
+    }
+
+    pub const COMPOSITION: Composition = Composition {
+        head: RelationTemplate {
+            key: Component::Head as isize,
+            namepath: "humanoid//Component::Head",
+            name: "head"
+        },
+        torso: RelationTemplate {
+            key: Component::Torso as isize,
+            namepath: "humanoid//Component::Torso",
+            name: "torso"
+        },
+    };
+
     pub mod head {
         pub enum Attachment {
-            WearOn = 1
+            WearOn = 1  // humanoid/head//Attachment::WearOn
         }
     }
-    pub mod torso {
-        pub enum Component {
-            Back = 1,
-            Chest = 2,
+    pub mod torso {  // humanoid/torso 
+        pub enum Component {  // humanoid/torso//Component
+            Upper = 1,  // humanoid/torso//Component::Back
+            Waist = 2,
         }
         pub enum Attachment {
-            WearOn = 1
+            StrapToBack = 2,
         }
-        pub mod back {
+
+        pub mod upper {
             pub enum Attachment {
-                StrapTo = 1,
+                WearOn = 1,
             }
         }
     }
+
     pub mod legs {
         pub enum Component {
             Left = 1,
@@ -95,16 +124,20 @@ impl RelationMapTrait for HumanoidComposition {
             _ => Err(())
         }
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
-    
+
 impl HumanoidComposition {
     pub fn new(zone: &mut Zone) -> HumanoidComposition {
         HumanoidComposition {
             entity: None,
-            head: Relation::new(HumanoidPart::Head as isize, Some(
+            head: Relation::new_from(&humanoid::COMPOSITION.head, Some(
                 EntityBuilder::new().id_zone(zone).description_name("Head").create()
             )),
-            back: Relation::new(HumanoidPart::Back as isize, Some(
+            back: Relation::new_from(&humanoid::COMPOSITION.torso, Some(
                 EntityBuilder::new().id_zone(zone).description_name("Back")
                     .attachments(Rc::new(RefCell::new(Box::new(
                         RelationHashMap::new(
@@ -122,6 +155,21 @@ impl HumanoidComposition {
                 )
             )
         }
+    }
+
+    pub fn from(boxed: &Box<dyn RelationMapTrait>) -> &Self {
+        match boxed.as_any().downcast_ref::<Self>() {
+            Some(c) => c,
+            None => panic!("Not a HumanoidComposition"),
+        }
+    }
+
+    pub fn head(&self) -> &RelationRef {
+        &self.head
+    }
+
+    pub fn back(&self) -> &RelationRef {
+        &self.back
     }
 }
 

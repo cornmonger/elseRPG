@@ -1,9 +1,12 @@
+#![allow(dead_code)]
+use std::{thread, any::Any};
 use elserpg::model::{
     zone::{Zone, ZoneTrait},
     area::{Area, AreaTrait},
     humanoid::{Humanoid, HumanoidPart},
+    humanoid::{humanoid, HumanoidComposition},
     DescriptionTrait,
-    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait, EntityBuilder}, character::Character};
+    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait, EntityBuilder, RelationMapTrait}, character::Character};
 
 fn main() {
     let mut zone = Zone::new(1);
@@ -39,30 +42,15 @@ fn main() {
 
     test_backpack(&player.character().entity().borrow());
     test_backpack(&nemesis.character().entity().borrow());
-
-    println!("Butterflies begin floating down ...");
-    let mut butterflies: Vec<Character> = Vec::new();
-    for i in 0..1_000_000 {
-        let entity = EntityBuilder::new().id_zone(&mut zone).description_name(&format!("Butterfly {}", i)).create();
-        butterflies.push(Character::new(entity));
-    }
-    
-    println!("{} butterflies have floated into {}.", butterflies.len(), zone.description().unwrap().name());
-
-    println!("The butterflies are flying into your backpack ...");
-    for _i in 0..1_000_000 {
-        let butterfly = butterflies.pop().as_mut().unwrap().entity().to_owned();
-        test_move_to_backpack(&mut player.character().entity().borrow_mut(), butterfly);
-    }
-    
-    println!("All of the butterflies have floated into your backpack.");
 }
 
 fn test_backpack(entity: &Entity) {
+    let components = entity.components().unwrap().borrow();
+    let composition = HumanoidComposition::from(&components);
+
     println!("{} has the following inside of the {} on their {}:",
         entity.description().unwrap().name(),
-        entity
-            .components().unwrap().borrow().relation(HumanoidPart::Back as isize).unwrap().borrow().entity().unwrap().borrow()
+        composition.back().borrow().entity().unwrap().borrow()
             .attachment_entity(HumanoidPart::Back as isize).unwrap().borrow()
             .description().unwrap().name(),
         entity
@@ -76,7 +64,6 @@ fn test_backpack(entity: &Entity) {
     for ent in backpack.borrow().contents().unwrap() {
         println!("  - {}", ent.borrow().description().unwrap().name());
     }
-
 }
 
 fn test_composition(entity: &Entity) {
@@ -92,8 +79,8 @@ fn test_composition(entity: &Entity) {
 
 fn test_backpack_parent(entity: &Entity) {
     let back_strapto_rel = entity
-        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
-        .attachment(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+        .component_entity(humanoid::Component::Torso as isize).unwrap().borrow()  // entity.components.back
+        .attachment(humanoid::torso::Attachment::StrapToBack as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
     
     println!("The {}'s owner is {}.",
         back_strapto_rel.borrow().entity().unwrap().borrow() // backpack entity
@@ -119,8 +106,8 @@ fn test_hurt(entity: &mut Entity) {
 
 fn test_add_to_backpack(entity: &mut Entity, zone: &mut Zone) {
     let backpack = entity
-        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
-        .attachment_entity(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+        .component_entity(humanoid::Component::Torso as isize).unwrap().borrow()  // entity.components.back
+        .attachment_entity(humanoid::torso::Attachment::StrapToBack as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
 
     let flute = Humanoid::new_flute(zone);
     backpack.borrow_mut().contents_mut().unwrap().push(flute.clone());
@@ -156,9 +143,37 @@ fn test_remove_from_backpack(entity: &mut Entity) -> EntityRef {
 
 fn test_move_to_backpack(entity: &mut Entity, item: EntityRef) {
     let backpack = entity
-        .component_entity(HumanoidPart::Back as isize).unwrap().borrow()  // entity.components.back
-        .attachment_entity(HumanoidPart::Back as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
+        .component_entity(humanoid::Component::Torso as isize).unwrap().borrow()  // entity.components.back
+        .attachment_entity(humanoid::torso::Attachment::StrapToBack as isize).unwrap().clone();  // entity.components.back.entity.attachments.strapped_to (backpack)
 
     backpack.borrow_mut().contents_mut().unwrap().push(item);
 }
 
+fn test_butterflies(entity: &mut Entity, zone: &mut Zone) {
+    let mut num = String::new();
+    println!("\nHow many butterflies?");
+    std::io::stdin().read_line(&mut num).expect("Bad butterfly!");
+    num.pop();
+    let num = num.parse::<isize>().unwrap();
+
+    let time = std::time::SystemTime::now();
+
+    println!("\nButterflies begin floating down ...");
+    let mut butterflies: Vec<Character> = Vec::with_capacity(num as usize);
+    for i in 0..num {
+        let entity = EntityBuilder::new().id_zone(zone).description_name(&format!("Butterfly {}", i)).create();
+        butterflies.push(Character::new(entity));
+    }
+    
+    println!("{} butterflies have floated into {}.", butterflies.len(), zone.description().unwrap().name());
+
+    println!("The butterflies are flying into your backpack ...");
+    for _i in 0..num {
+        let butterfly = butterflies.pop().as_mut().unwrap().entity().to_owned();
+        test_move_to_backpack(entity, butterfly);
+    }
+    
+    println!("All of the butterflies have floated into your backpack.");  
+    println!("Butterflies spent {} seconds fluttering about.", std::time::SystemTime::now().duration_since(time).unwrap().as_secs());
+    thread::sleep(std::time::Duration::from_secs(30));
+}

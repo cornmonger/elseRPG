@@ -1,4 +1,5 @@
 use std::{collections::{HashMap}, rc::{Rc, Weak}, cell::{RefCell}};
+use std::any::Any;
 
 use super::{DescriptionTrait, zone::Zone};
 
@@ -277,6 +278,7 @@ pub struct Relation {
     pub(crate) key: isize,
     pub(crate) parent: Option<WeakRelationMapRef>,
     pub(crate) entity: Option<EntityRef>,
+    pub(crate) template: Option<&'static RelationTemplate>,
 }
 
 impl RelationTrait for Relation {
@@ -298,7 +300,19 @@ impl RelationTrait for Relation {
 
 impl Relation {
     pub fn new(key: isize, entity: Option<EntityRef>) -> RelationRef {
-        let relation = Rc::new(RefCell::new(Relation { key, parent: None, entity }));
+        let relation = Rc::new(RefCell::new(Relation { key, parent: None, template: None, entity}));
+        
+        let weak_relation = Rc::downgrade(&relation);
+
+        if let Some(entity) = &relation.borrow_mut().entity {
+            entity.borrow_mut().parent = Some(weak_relation);
+        }
+
+        relation
+    }
+
+    pub fn new_from(template: &'static RelationTemplate, entity: Option<EntityRef>) -> RelationRef {
+        let relation = Rc::new(RefCell::new(Relation { key: template.key(), parent: None, template: Some(template), entity}));
         
         let weak_relation = Rc::downgrade(&relation);
 
@@ -320,6 +334,7 @@ pub trait RelationMapTrait {
     fn relation(&self, key: isize) -> Result<&RelationRef, ()>;
     fn relation_ref(&self, key: isize) -> Result<RelationRef, ()>;
     fn iter(&self) -> std::vec::IntoIter<RelationRef>;
+    fn as_any(&self) -> &dyn Any;
 }
 
 pub struct RelationHashMap {
@@ -362,6 +377,10 @@ impl RelationMapTrait for RelationHashMap {
             Err(())
         }
     }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
 }
 
 impl RelationHashMap {
@@ -369,3 +388,29 @@ impl RelationHashMap {
         Self { entity: None, map }
     }
 }
+
+pub trait CompositionTemplateTrait {
+    type Relationship;
+    const NAMESPACE: &'static str;
+}
+
+pub struct RelationTemplate {
+    pub key: isize,
+    pub namepath: &'static str,
+    pub name: &'static str,
+}
+
+impl RelationTemplate {
+    pub fn key(&self) -> isize {
+        self.key
+    }
+
+    pub fn namepath(&self) -> &'static str {
+        self.namepath
+    }
+
+    pub fn name(&self) -> &'static str {
+        self.name
+    }
+}
+
