@@ -8,6 +8,10 @@ impl Character {
     pub fn entity(&self) -> &EntityRef {
         &self.entity
     }
+
+    pub fn new(entity: EntityRef) -> Self {
+        Character { entity: entity }
+    }
 }
 
 pub struct Player {

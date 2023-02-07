@@ -3,7 +3,7 @@ use elserpg::model::{
     area::{Area, AreaTrait},
     humanoid::{Humanoid, HumanoidPart},
     DescriptionTrait,
-    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait}};
+    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait, EntityBuilder}, character::Character};
 
 fn main() {
     let mut zone = Zone::new(1);
@@ -39,6 +39,23 @@ fn main() {
 
     test_backpack(&player.character().entity().borrow());
     test_backpack(&nemesis.character().entity().borrow());
+
+    println!("Butterflies begin floating down ...");
+    let mut butterflies: Vec<Character> = Vec::new();
+    for i in 0..1_000_000 {
+        let entity = EntityBuilder::new().id_zone(&mut zone).description_name(&format!("Butterfly {}", i)).create();
+        butterflies.push(Character::new(entity));
+    }
+    
+    println!("{} butterflies have floated into {}.", butterflies.len(), zone.description().unwrap().name());
+
+    println!("The butterflies are flying into your backpack ...");
+    for _i in 0..1_000_000 {
+        let butterfly = butterflies.pop().as_mut().unwrap().entity().to_owned();
+        test_move_to_backpack(&mut player.character().entity().borrow_mut(), butterfly);
+    }
+    
+    println!("All of the butterflies have floated into your backpack.");
 }
 
 fn test_backpack(entity: &Entity) {
