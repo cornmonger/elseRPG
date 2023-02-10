@@ -1,6 +1,6 @@
 # elseRPG
 
-A distributed entity component system with a hybrid user experience that combines the traditional text adventure with graphical cues in a modern web interface.
+A distributed entity component system with a hybrid text/web user experience.
 
 ## ... *Work in Progress* ...
 
