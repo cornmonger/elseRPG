@@ -1,7 +1,7 @@
 use std::{collections::{HashMap}, rc::{Rc, Weak}, cell::{RefCell}};
 use std::any::Any;
 
-use super::{DescriptionTrait, zone::Zone};
+use super::{DescriptionTrait, zone::Zone, template};
 
 pub type RelationRef = Rc<RefCell<Relation>>;
 pub type WeakRelationRef = Weak<RefCell<Relation>>;
@@ -109,6 +109,17 @@ impl EntityTrait for Entity {
         }
     }
 
+}
+
+pub enum Filter {
+    InnerContainer
+}
+
+impl Entity {
+    pub fn query_relation(&self, relation: template::RelationNode, filters: &[Filter]) -> Option<EntityRef> {
+        let result: Option<EntityRef> = None;
+        None
+    }
 }
 
 pub struct EntityDescription {

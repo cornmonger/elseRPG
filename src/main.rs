@@ -6,7 +6,7 @@ use elserpg::model::{
     humanoid::{Humanoid, HumanoidPart},
     humanoid::{humanoid, HumanoidComposition},
     DescriptionTrait,
-    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait, EntityBuilder, RelationMapTrait}, character::Character};
+    entity::{Entity, EntityTrait, RelationTrait, EntityRef, PermeabilityTrait, EntityBuilder, RelationMapTrait, Filter}, character::Character};
 
 fn main() {
     let mut zone = Zone::new(1);
@@ -149,6 +149,11 @@ fn test_move_to_backpack(entity: &mut Entity, item: EntityRef) {
     backpack.borrow_mut().contents_mut().unwrap().push(item);
 }
 
+fn test_relation_query(entity: &Entity) {
+    //let head = entity.query_relation(humanoid::torso::Component::Attachment::StrapToBack, &[Filter::InnerContainer]);
+    //let backpack = entity.query_relation(humanoid::torso::Attachment::StrapToBack, &[Filter::InnerContainer]);
+}
+
 fn test_butterflies(entity: &mut Entity, zone: &mut Zone) {
     let mut num = String::new();
     println!("\nHow many butterflies?");
@@ -175,5 +180,4 @@ fn test_butterflies(entity: &mut Entity, zone: &mut Zone) {
     
     println!("All of the butterflies have floated into your backpack.");  
     println!("Butterflies spent {} seconds fluttering about.", std::time::SystemTime::now().duration_since(time).unwrap().as_secs());
-    thread::sleep(std::time::Duration::from_secs(30));
 }
